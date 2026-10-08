@@ -58,6 +58,13 @@ export const terminalLinksSchema = z.object({
   solscan: z.url(),
 });
 export type TerminalLinks = z.infer<typeof terminalLinksSchema>;
+export const resolvedInputSchema = z.object({
+  identity: mintIdentitySchema,
+  links: terminalLinksSchema,
+  source: z.enum(['mint', 'pump', 'gmgn', 'axiom']),
+  pool: addressSchema.nullable(),
+});
+export type ResolvedInput = z.infer<typeof resolvedInputSchema>;
 export const serviceStatusSchema = z.object({
   contractVersion: z.literal(CONTRACT_VERSION),
   status: z.enum(['ready', 'degraded']),

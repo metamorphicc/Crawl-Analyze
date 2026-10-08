@@ -4,10 +4,20 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
-**Stage 01: implemented and locally verified — runnable services and shared contracts.**
+**Stage 02: implemented, local checks pass; mainnet/terminal acceptance pending credentials.**
 
 Current branch: `main`. Stage 00 is committed as `35d63d6`; workflow steering as `1e505f2`.
-Stage 01 checkpoint subject: `feat: add shared contracts and runnable application services`.
+Stage 01 checkpoint: `4e3ee68`.
+Stage 02 subject: `feat: resolve Solana mint and terminal links safely`.
+
+Stage 02 adds canonical bare mint/Pump/GMGN/Axiom parsing, referral stripping, hostile hostname/
+wrong-chain/ambiguous input rejection, lossless RPC JSON, cancellable RPC requests and configured
+fallback, SPL mint authority/decimals/supply verification, Token-2022 extension discovery,
+PumpSwap pool-to-base-mint resolution, safe terminal links, `/v1/resolve` and an unstyled token form.
+31 unit tests and full strict build pass. Official landing routes were read, but Axiom's destination
+was inaccessible to the browsing tool; actual terminal token/pool navigation remains pending.
+`tools/live-check.ts` reports the absent local RPC/indexer configuration; no mainnet success claimed.
+Unsupported Axiom pool venues require the mint rather than silently choosing another token.
 
 Stage 01 delivers strict workspace builds, versioned request/job/event/evidence/mint/quality contracts,
 safe validated configuration, API live/readiness/status routes, independent service entrypoints,
@@ -78,8 +88,9 @@ the actual container references/digests are in `docs/ENVIRONMENT.md`.
 
 ## Next task
 
-Implement **stage 02**: canonical mint/link input, mint verification, safe terminal links and a
-resolution API. Live validation remains pending local provider credentials.
+Implement **stage 03**: full holder pagination, owner aggregation, snapshot reconciliation,
+infrastructure evidence, shared provider budgets/cancellation/circuit failover. Continue independently
+of the pending live gates; do not mark those gates passed without credentials and evidence.
 
 Continue directly on `main`, as explicitly requested by the human. No push.
 Website styling and spider animation wait for the user's `design.md` / `desigh.md`.

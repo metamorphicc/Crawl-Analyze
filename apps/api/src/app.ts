@@ -5,6 +5,8 @@ import rateLimit from '@fastify/rate-limit';
 import { capabilities, loggerOptions, type Config } from '@crawlspider/config';
 import { CONTRACT_VERSION, PublicError } from '@crawlspider/contracts';
 import type { Storage } from '@crawlspider/storage';
+import { RpcClient, resolveInput } from '@crawlspider/providers';
+import { scanRequestSchema } from '@crawlspider/contracts';
 
 export function createApp(config: Config, storage: Storage) {
   const app = Fastify({
@@ -17,6 +19,17 @@ export function createApp(config: Config, storage: Storage) {
   app.register(helmet);
   app.register(cors, { origin: config.WEB_ORIGIN, credentials: true });
   app.register(rateLimit, { max: 60, timeWindow: '1 minute' });
+  const rpc = new RpcClient(config);
+  app.post('/v1/resolve', async (request) => {
+    const parsed = scanRequestSchema.safeParse(request.body);
+    if (!parsed.success)
+      throw new PublicError('INVALID_INPUT', 'Expected a mint address or supported token URL');
+    return resolveInput(
+      parsed.data.input,
+      rpc,
+      AbortSignal.timeout(config.SCAN_PREVIEW_DEADLINE_MS),
+    );
+  });
   app.setErrorHandler((error: Error, _request, reply) => {
     if (error instanceof PublicError)
       return reply.code(error.status).send({ code: error.code, message: error.message });
