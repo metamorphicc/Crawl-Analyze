@@ -11,6 +11,8 @@
 - Work in stages. Make one reviewable local commit after each stage passes its applicable checks.
 - NEVER run `git push`, publish releases, or deploy during this local build workflow. The user pushes independently.
 - External provider and Telegram accounts exist. Configure credentials locally; never request secrets in chat, print them, or commit them.
+- Work directly on `main`, as explicitly requested by the user. Do not create a prefixed branch.
+- Defer website styling and the spider visual until the user supplies `design.md` (also referred to as `desigh.md`). Build and test functional browser flows meanwhile; do not claim visual acceptance.
 
 ## Start/resume procedure
 
@@ -38,7 +40,7 @@
 - Public scans are usable without Telegram login. Telegram identity is required only for persistent watchlists/preferences.
 - Verify real behavior, not implementation-shaped unit tests. Use deterministic fixtures for parser/math invariants, integration tests for DB/queues, and browser tests for user journeys.
 - A failed provider response becomes unknown/partial; it never becomes zero holders, zero previous activity, or a false sale.
-- Use the Hallmark skill during UI implementation. This preparation stage has not emitted or visually verified a website.
+- Use the Hallmark skill when the supplied design is implemented. Visual work is currently deferred by the user.
 - Frontend is static React/Vite. Hosting may serve the built frontend; long-lived workers, PostgreSQL and Redis run outside edge isolates. No hosting registration or deployment is part of this stage.
 
 ## Stage completion checklist

@@ -72,4 +72,5 @@ update this status and make a separate local commit:
 
 `feat: add shared contracts and runnable application services`
 
-Continue on `codex/bootstrap` unless the human requests a different branch. No push.
+Continue directly on `main`, as explicitly requested by the human. No push.
+Website styling and spider animation wait for the user's `design.md` / `desigh.md`.

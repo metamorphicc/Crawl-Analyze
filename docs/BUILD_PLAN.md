@@ -56,6 +56,11 @@ alternative to graph navigation.
 
 ## 3. Visual direction
 
+**User update, 2026-10-09:** visual implementation waits for the user's `design.md` / `desigh.md`.
+The ideas below remain a proposal, not an instruction to style the site now. Stage 09 implements
+functional browser journeys first; visual acceptance is pending that document. Continue independent
+backend, bot, monitoring and release work. All stage commits are made directly on `main`, never pushed.
+
 Working name: CrawlSpider. A dark investigative workbench with a large relationship map beside
 compact live findings. Typography uses Space Grotesk and IBM Plex Mono; final palette tokens are
 chosen in the UI stage through Hallmark rather than copied from CrawlScan.
