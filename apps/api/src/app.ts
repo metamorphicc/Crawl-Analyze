@@ -5,6 +5,7 @@ import rateLimit from '@fastify/rate-limit';
 import { capabilities, loggerOptions, type Config } from '@crawlspider/config';
 import { CONTRACT_VERSION, PublicError } from '@crawlspider/contracts';
 import type { Storage } from '@crawlspider/storage';
+import { sharedProviderBudget } from '@crawlspider/storage';
 import { RpcClient, resolveInput } from '@crawlspider/providers';
 import { scanRequestSchema } from '@crawlspider/contracts';
 
@@ -19,7 +20,13 @@ export function createApp(config: Config, storage: Storage) {
   app.register(helmet);
   app.register(cors, { origin: config.WEB_ORIGIN, credentials: true });
   app.register(rateLimit, { max: 60, timeWindow: '1 minute' });
-  const rpc = new RpcClient(config);
+  const rpc = new RpcClient(config, fetch, {
+    budget: sharedProviderBudget(
+      storage,
+      config.PROVIDER_MAX_RPS,
+      config.PROVIDER_DAILY_REQUEST_LIMIT,
+    ),
+  });
   app.post('/v1/resolve', async (request) => {
     const parsed = scanRequestSchema.safeParse(request.body);
     if (!parsed.success)

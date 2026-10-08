@@ -32,6 +32,7 @@ export function createStorage(config: Pick<Config, 'DATABASE_URL' | 'REDIS_URL'>
   return {
     pool,
     redis,
+    ensureRedis: connectRedis,
     async readiness() {
       const checks = await Promise.allSettled([
         pool.query('SELECT 1'),
@@ -51,3 +52,4 @@ export function createStorage(config: Pick<Config, 'DATABASE_URL' | 'REDIS_URL'>
   };
 }
 export type Storage = ReturnType<typeof createStorage>;
+export * from './budget.js';

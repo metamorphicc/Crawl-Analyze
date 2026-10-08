@@ -4,11 +4,21 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
-**Stage 02: implemented, local checks pass; mainnet/terminal acceptance pending credentials.**
+**Stage 03: implemented, local checks pass; mainnet acceptance pending credentials.**
 
 Current branch: `main`. Stage 00 is committed as `35d63d6`; workflow steering as `1e505f2`.
 Stage 01 checkpoint: `4e3ee68`.
 Stage 02 subject: `feat: resolve Solana mint and terminal links safely`.
+Stage 02 checkpoint: `39daccc`. Stage 03 subject:
+`feat: index holders with snapshot quality and provider failover`.
+
+Stage 03 delivers full bounded DAS pagination, owner aggregation, strict u64 amounts, supply and
+index-slot reconciliation, partial states, bounded reread, individually verified Pump/PumpSwap vault
+exclusions, durable cross-process request/rate budgets, bounded retry/failover/circuit cooldown and
+response/body cancellation limits. Missing account flags remain null. See `docs/STAGE_03.md`.
+43 unit tests, 3 real-infrastructure integration tests and builds pass. Live >20-owner reconciliation,
+real DAS capability and mainnet vault evidence remain pending. Request caps are not a dollar credit
+cap; an actual tariff model remains an operational configuration item.
 
 Stage 02 adds canonical bare mint/Pump/GMGN/Axiom parsing, referral stripping, hostile hostname/
 wrong-chain/ambiguous input rejection, lossless RPC JSON, cancellable RPC requests and configured
@@ -88,8 +98,8 @@ the actual container references/digests are in `docs/ENVIRONMENT.md`.
 
 ## Next task
 
-Implement **stage 03**: full holder pagination, owner aggregation, snapshot reconciliation,
-infrastructure evidence, shared provider budgets/cancellation/circuit failover. Continue independently
+Implement **stage 04**: official IDL decoding, inner/versioned transactions, token flows, Pump market
+structure and venue capabilities. Continue independently
 of the pending live gates; do not mark those gates passed without credentials and evidence.
 
 Continue directly on `main`, as explicitly requested by the human. No push.
