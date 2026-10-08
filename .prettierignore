@@ -1,0 +1,12 @@
+node_modules
+package-lock.json
+crawlscan-review
+.local
+dist
+coverage
+playwright-report
+test-results
+.sites-runtime
+packages/providers/idl/pump.json
+packages/providers/idl/pump_amm.json
+packages/providers/idl/pump_fees.json

@@ -1,0 +1,15 @@
+/crawlscan-review/
+node_modules/
+.env
+.env.*
+!.env.example
+.local/
+dist/
+coverage/
+playwright-report/
+test-results/
+*.log
+.sites-runtime/
+.openai/secrets*
+.DS_Store
+Thumbs.db

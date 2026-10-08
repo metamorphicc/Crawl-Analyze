@@ -1,0 +1,29 @@
+{
+  "capturedAt": "2026-10-09",
+  "license": "MIT",
+  "publicDocumentation": "https://github.com/pump-fun/pump-public-docs",
+  "publicDocumentationCommitObserved": "2293f9a66c654e9fe82dc5e8f4618538f24bb35f",
+  "files": [
+    {
+      "file": "pump.json",
+      "package": "@pump-fun/pump-sdk",
+      "packageVersion": "4.0.0",
+      "sourcePath": "src/idl/pump.json",
+      "sha256": "fb5cce35e21a1b6a74d192eea11fe805602fa357acc7051dd1492fc09714d467"
+    },
+    {
+      "file": "pump_fees.json",
+      "package": "@pump-fun/pump-sdk",
+      "packageVersion": "4.0.0",
+      "sourcePath": "src/idl/pump_fees.json",
+      "sha256": "f111d2e5c9aa3d4e64d6a4e6b6f34300ccb1eaf6abc46834fe491836dc90aa74"
+    },
+    {
+      "file": "pump_amm.json",
+      "package": "@pump-fun/pump-swap-sdk",
+      "packageVersion": "2.1.0",
+      "sourcePath": "src/idl/pump_amm.json",
+      "sha256": "b7d8c57a4d9c4dd0109a9ab893052352333252d4eedced10ac091d4d66cab89b"
+    }
+  ]
+}

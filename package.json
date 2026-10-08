@@ -1,0 +1,48 @@
+{
+  "name": "crawlspider",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@11.3.0",
+  "engines": {
+    "node": ">=24.11.1 <25",
+    "npm": ">=11 <12"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "doctor": "node tools/doctor.mjs",
+    "doctor:services": "node tools/doctor.mjs --services",
+    "browser:check": "node tools/browser-check.mjs",
+    "toolchain:check": "tsc --noEmit && tsx tools/toolchain-check.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run toolchain:check && npm run format:check",
+    "infra:up": "docker compose up -d --wait",
+    "infra:down": "docker compose down"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.64.0",
+    "@types/node": "24.19.1",
+    "autocannon": "8.0.0",
+    "drizzle-kit": "0.31.11",
+    "eslint": "10.12.0",
+    "prettier": "3.9.9",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.1",
+    "vitest": "5.0.3"
+  },
+  "dependencies": {
+    "dotenv": "18.0.6"
+  },
+  "overrides": {
+    "@esbuild-kit/core-utils": {
+      "esbuild": "0.28.2"
+    },
+    "uuid": "11.1.1"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "@crawlspider/analysis",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "decimal.js": "10.6.0",
+    "zod": "4.6.5"
+  }
+}

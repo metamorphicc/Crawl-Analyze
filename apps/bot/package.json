@@ -1,0 +1,10 @@
+{
+  "name": "@crawlspider/bot",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "grammy": "1.46.0",
+    "pino": "10.4.0"
+  }
+}
