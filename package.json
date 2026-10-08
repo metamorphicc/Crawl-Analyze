@@ -19,9 +19,18 @@
     "toolchain:check": "tsc --noEmit && tsx tools/toolchain-check.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run toolchain:check && npm run format:check",
+    "check": "npm run typecheck && npm test && npm run build && npm run format:check",
     "infra:up": "docker compose up -d --wait",
-    "infra:down": "docker compose down"
+    "infra:down": "docker compose down",
+    "typecheck": "tsc --noEmit",
+    "build": "node tools/build.mjs",
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "db:migrate": "node --conditions=development --import tsx packages/storage/src/migrate.ts",
+    "dev:api": "node --conditions=development --import tsx apps/api/src/index.ts",
+    "dev:worker": "node --conditions=development --import tsx apps/worker/src/index.ts",
+    "dev:bot": "node --conditions=development --import tsx apps/bot/src/index.ts",
+    "dev:web": "npm run dev --workspace @crawlspider/web"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

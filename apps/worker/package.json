@@ -6,6 +6,21 @@
   "dependencies": {
     "bullmq": "6.3.11",
     "ioredis": "6.0.0",
-    "pino": "10.4.0"
+    "pino": "10.4.0",
+    "@crawlspider/contracts": "0.0.0",
+    "@crawlspider/config": "0.0.0",
+    "@crawlspider/storage": "0.0.0",
+    "@crawlspider/providers": "0.0.0",
+    "@crawlspider/analysis": "0.0.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
   }
 }

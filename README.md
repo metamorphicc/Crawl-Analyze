@@ -4,8 +4,8 @@ Solana token intelligence: holder relationships, concentration, liquidity scenar
 and change alerts through a website and Telegram bot. Accepts Solana mint addresses and supported
 pump.fun, Axiom and GMGN links.
 
-**Current state: stage 00 — development environment and implementation plan.** The scanner,
-website and Telegram bot are planned; they are not implemented yet.
+**Current state: runnable service foundation (stage 01).** API readiness uses the real database
+and Redis. The scan pipeline is under development. Website styling awaits the user's `design.md`.
 
 - [Complete build plan](docs/BUILD_PLAN.md)
 - [Architecture decisions](docs/DECISIONS.md)
@@ -21,13 +21,30 @@ Node 24 (prepared runtime: 24.11.1), npm 11, Docker Desktop with Linux container
 npm ci
 node tools/setup-local.mjs
 npm run infra:up
+npm run db:migrate
 npm run doctor:services
 npm run check
 ```
 
 `setup-local.mjs` creates `.env` once with a random local database password and never overwrites an
 existing file. Fill external provider and Telegram credentials only in the ignored `.env` file.
-The application will not use the external accounts until a later live integration stage.
+Each service validates its configuration. The bot requires a real token before it starts polling.
+No key values are included in health responses or logs.
+
+Run processes in separate terminals from the repository root:
+
+```sh
+npm run dev:api
+npm run dev:worker
+npm run dev:web
+npm run dev:bot
+```
+
+Open `http://localhost:5173`; API is `http://localhost:3001`. Liveness is `/health/live`, dependency
+readiness is `/health/ready`. `/v1/status` additionally exposes provider capabilities as booleans.
+`npm run build` compiles packages/services and the Vite frontend. Compiled API/worker/bot can run
+with `node apps/<service>/dist/index.js` from the repository root. Schema migration is idempotent.
+`npm run test:integration` uses real local PostgreSQL/Redis and an isolated disposable test schema.
 
 The local PostgreSQL and Redis containers bind to `127.0.0.1` only and retain named volumes.
 `npm run infra:down` stops them without deleting those volumes.
@@ -48,9 +65,10 @@ tools/                Development environment and compatibility checks
 docs/                 Build plan, decisions, status and verification
 ```
 
-The workspace package manifests currently install components; application source is added stage
-by stage. The reference CrawlScan checkout is local-only and excluded from this repository.
+Application source is added stage by stage. The reference CrawlScan checkout is local-only and
+excluded from this repository.
 
 ## Git workflow
 
 Every completed stage receives a local commit. **The agent does not push or deploy.**
+Work takes place directly on `main`, as requested by the user.

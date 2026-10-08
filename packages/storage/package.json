@@ -6,9 +6,21 @@
   "dependencies": {
     "drizzle-orm": "0.45.4",
     "pg": "8.23.1",
-    "ioredis": "6.0.0"
+    "ioredis": "6.0.0",
+    "@crawlspider/contracts": "0.0.0",
+    "@crawlspider/config": "0.0.0"
   },
   "devDependencies": {
     "@types/pg": "8.23.1"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
   }
 }

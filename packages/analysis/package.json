@@ -5,6 +5,17 @@
   "type": "module",
   "dependencies": {
     "decimal.js": "10.6.0",
-    "zod": "4.6.5"
+    "zod": "4.6.5",
+    "@crawlspider/contracts": "0.0.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
   }
 }

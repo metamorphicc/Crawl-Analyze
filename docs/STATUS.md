@@ -4,7 +4,20 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
-**Stage 00: complete — development environment and executable build plan.**
+**Stage 01: implemented and locally verified — runnable services and shared contracts.**
+
+Current branch: `main`. Stage 00 is committed as `35d63d6`; workflow steering as `1e505f2`.
+Stage 01 checkpoint subject: `feat: add shared contracts and runnable application services`.
+
+Stage 01 delivers strict workspace builds, versioned request/job/event/evidence/mint/quality contracts,
+safe validated configuration, API live/readiness/status routes, independent service entrypoints,
+an unstyled frontend status page, transactional idempotent migration, PostgreSQL durable job/report/
+identity/watch/outbox/outcome tables, redacted logging, bounded readiness checks and CI.
+
+Verified: 7 unit tests, 2 real-infrastructure integration tests, empty-schema migration/reapplication,
+active-job uniqueness, real PG/Redis readiness, full builds and compiled-process/browser smoke.
+Telegram polling requires the user's token and is not live-verified; no bot message has been sent.
+Worker infrastructure starts but scan processing is intentionally installed in subsequent stages.
 
 Commit subject: `chore: bootstrap toolchain and full product build plan`.
 The commit containing this document is the stage-00 checkpoint. The agent never pushes.
@@ -57,20 +70,16 @@ the actual container references/digests are in `docs/ENVIRONMENT.md`.
 - The user confirmed provider/Telegram accounts exist, but external credentials have not been filled
   into this repository's ignored `.env`. Diagnostics list only configured/pending, never values.
 - No mainnet provider call, real scan, terminal URL resolution or Telegram message has been tested.
-- No website, API application, scan worker or Telegram bot source is implemented yet; workspace
-  manifests and toolchain checks are preparation only.
+- Website design remains deferred. The service foundation exists; analytical scan execution and
+  complete user journeys are implemented in subsequent stages.
 - No remote is configured in this new repository, no commit is pushed, and nothing is deployed.
 - Forward outcome data and predictive validation require real observations after the data pipeline
   exists. The plan explicitly separates heuristic release from empirically validated accuracy.
 
 ## Next task
 
-Implement **stage 01** from `docs/BUILD_PLAN.md`: shared schemas, validated config, runnable services,
-package exports, database migrations, health/readiness, redacted logging, shutdown and dev scripts.
-Add CI checks for the real source introduced in this stage. Verify startup/migrations/contracts,
-update this status and make a separate local commit:
-
-`feat: add shared contracts and runnable application services`
+Implement **stage 02**: canonical mint/link input, mint verification, safe terminal links and a
+resolution API. Live validation remains pending local provider credentials.
 
 Continue directly on `main`, as explicitly requested by the human. No push.
 Website styling and spider animation wait for the user's `design.md` / `desigh.md`.

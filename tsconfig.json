@@ -1,14 +1,22 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2023",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
     "noEmit": true,
-    "skipLibCheck": true,
-    "types": ["node"]
+    "paths": {
+      "@crawlspider/contracts": ["./packages/contracts/src/index.ts"],
+      "@crawlspider/config": ["./packages/config/src/index.ts"],
+      "@crawlspider/providers": ["./packages/providers/src/index.ts"],
+      "@crawlspider/analysis": ["./packages/analysis/src/index.ts"],
+      "@crawlspider/storage": ["./packages/storage/src/index.ts"]
+    }
   },
-  "include": ["tools/**/*.ts"]
+  "include": [
+    "tools/**/*.ts",
+    "packages/*/src/**/*.ts",
+    "apps/*/src/**/*.ts",
+    "apps/web/src/**/*.tsx",
+    "apps/web/vite.config.ts",
+    "vitest*.ts",
+    "tests/**/*.ts"
+  ]
 }
