@@ -83,6 +83,13 @@ The PC must stay on; stage 13 full operations and stage 14 public/live acceptanc
 
 ## Result semantics
 
+2026-10-09 user-requested latency repair: the website defaults to a quick targeted recent-history
+sample (six owners, 6s history budget), with an optional extended sample (twelve owners, 20s).
+The indexed holder table is not trimmed. Coverage limitations remain explicit. A separately
+versioned snapshot distribution score is allowed when the holder/authority/flag gates pass,
+without requiring full history or a sell venue; it cannot replace the extended token assessment.
+External provider pool discovery is chart-only and never changes on-chain reserve eligibility.
+
 - First result: a bounded preview that can say pending/partial.
 - Deep result: evidence-backed report with its own completion state and coverage.
 - `riskScore` and `confidence` are separate; publish exact direction/meaning of the score.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getMintEncoder } from '@solana-program/token';
-import { address, none } from '@solana/kit';
+import { address, none, getAddressEncoder } from '@solana/kit';
 import { decodeMintIdentity, resolveInput } from './mint.js';
 import { TOKEN_PROGRAM, TOKEN_2022_PROGRAM, WRAPPED_SOL } from './input.js';
 const mintBytes = () =>
@@ -20,6 +20,31 @@ const account = () => ({
   slot: '9007199254740993',
 });
 describe('on-chain mint verification', () => {
+  it('validates metadata-only extensions without confusing them with token restrictions', () => {
+    const data = new Uint8Array(166 + 4 + 64 + 4 + 80);
+    data.set(mintBytes());
+    data[165] = 1;
+    data[166] = 18;
+    data[168] = 64;
+    const at = 234;
+    data[at] = 19;
+    data[at + 2] = 80;
+    data.set(getAddressEncoder().encode(address(WRAPPED_SOL)), at + 4 + 32);
+    const result = decodeMintIdentity(WRAPPED_SOL, {
+      ...account(),
+      owner: TOKEN_2022_PROGRAM,
+      data,
+    });
+    expect(result.token2022Extensions).toEqual([18, 19]);
+    data[at + 4 + 32] = 255;
+    expect(() =>
+      decodeMintIdentity(WRAPPED_SOL, { ...account(), owner: TOKEN_2022_PROGRAM, data }),
+    ).toThrow();
+    data[168] = 63;
+    expect(() =>
+      decodeMintIdentity(WRAPPED_SOL, { ...account(), owner: TOKEN_2022_PROGRAM, data }),
+    ).toThrow();
+  });
   it('decodes exact supply, slot and revoked authorities', () => {
     const result = decodeMintIdentity(WRAPPED_SOL, account());
     expect(result.supply).toBe('18446744073709551615');

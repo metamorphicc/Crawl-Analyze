@@ -4,6 +4,24 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
+**Targeted quick/extended scans, scoped distribution score and independent charts.**
+
+Default website scanning now samples up to six key-wallet recent windows; extended scanning
+samples up to twelve with separate time budgets. All indexed holders remain visible. Metadata-only
+Token-2022 extensions 18/19 are reviewed instead of blanket-blocked; other extensions stay unknown.
+An independent snapshot-only `distribution-1` score is explicitly distinguished from the original
+extended assessment. Chart pool discovery now covers external venues without enabling reserve math.
+Same live mint: first findings in 1.1s, quick pipeline 3.736s (2/15 owners), extended 7.667s (3/15).
+Distribution scored 45/100 from a complete holder snapshot; extended coverage remains insufficient.
+The token's actual external pool returned four candles. This is narrower sampling, not equal-depth
+120s analysis or a public latency SLA. Removed a verified idle stale agent-started duplicate worker;
+the user's API/compiled worker were left running. No user process restart, push or deployment.
+Verification: typecheck, 170 unit tests, 21 PostgreSQL/Redis integration tests and all 12 browser
+journeys pass, including the default quick scan and explicitly scoped score. Production build
+and format/diff checks are recorded with this local checkpoint. Telegram formatting keeps the
+same distinction; no bot message was sent. See `docs/verification/TARGETED_SCANS.md`.
+Stages 13/14 remain pending in full.
+
 **Hybrid hosting configuration: Vercel web + backend on the user's PC.**
 
 The user selected option 1 on 2026-10-09. Root `vercel.json` explicitly deploys only the `web`

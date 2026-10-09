@@ -19,3 +19,16 @@ it('compares webhook credentials without accepting prefixes or missing values', 
   expect(validWebhookSecret('abcd1', 'abcd')).toBe(false);
   expect(validWebhookSecret('abcd', 'abcd')).toBe(true);
 });
+it('distinguishes a distribution score from unavailable extended analysis', () => {
+  const r = fixtureReport(randomUUID());
+  r.distributionRisk = { ...r.risk, scope: 'distribution' };
+  r.risk = {
+    ...r.risk,
+    eligible: false,
+    riskScore: null,
+    classification: 'insufficient-data',
+    eligibilityReasons: ['USABLE_HISTORY_BELOW_80_PERCENT'],
+  };
+  expect(reportText(r)).toContain('Только распределение');
+  expect(reportText(r)).toContain('Расширенная оценка: недостаточно данных.');
+});

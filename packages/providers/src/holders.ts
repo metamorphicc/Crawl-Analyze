@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   PublicError,
+  supportedMintSemantics,
   addressSchema,
   type DataQuality,
   type MintIdentity,
@@ -146,7 +147,7 @@ export async function enumerateHolders(
     reasons.push(
       identity.mint === WRAPPED_SOL ? 'NATIVE_MINT_SUPPLY_UNSUPPORTED' : 'SUPPLY_NOT_RECONCILED',
     );
-  if (identity.token2022Extensions.length)
+  if (!supportedMintSemantics(identity.token2022Extensions))
     reasons.push('TOKEN_2022_EXTENSION_SEMANTICS_REQUIRE_REVIEW');
   const min = slots.length ? slots.reduce((a, b) => (a < b ? a : b)) : null,
     max = slots.length ? slots.reduce((a, b) => (a > b ? a : b)) : null;

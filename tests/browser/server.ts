@@ -10,6 +10,7 @@ import { migrate } from '../../packages/storage/src/migrate.js';
 import { startRunner } from '../../apps/worker/src/runner.js';
 import { createApp } from '../../apps/api/src/app.js';
 import { fixtureReport } from '../fixtures/report.js';
+import { assessRisk } from '@crawlspider/analysis';
 import { key } from '../fixtures/analytics.js';
 import { TOKEN_PROGRAM, PUMP_AMM_PROGRAM } from '@crawlspider/providers';
 const config = {
@@ -120,6 +121,24 @@ const runner = startRunner(config, storage, {
       r.snapshot.quality.reasons = ['SYNTHETIC_PARTIAL_INDEX'];
     }
     if (lease.mint === key(5)) r.observedAt = '2020-01-01T00:00:00.000Z';
+    if (lease.mint === key(8)) {
+      r.distributionRisk = assessRisk({
+        identity: r.identity,
+        holders: r.snapshot.holders,
+        quality: r.snapshot.quality,
+        enumerationComplete: true,
+        signals: [],
+        graph: r.graph,
+        observedAt: r.observedAt,
+        supportedMarket: false,
+        scope: 'distribution',
+      });
+      r.risk.eligible = false;
+      r.risk.riskScore = null;
+      r.risk.classification = 'insufficient-data';
+      r.risk.eligibilityReasons = ['USABLE_HISTORY_BELOW_80_PERCENT'];
+      r.limitations.push('TARGETED_HISTORY_SAMPLE');
+    }
     await progress('analysis');
     return reportSchema.parse(r);
   },

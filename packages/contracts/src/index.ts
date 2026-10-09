@@ -1,4 +1,5 @@
 import { z } from 'zod';
+export { supportedMintSemantics } from './token-semantics.js';
 
 export const CONTRACT_VERSION = '1' as const;
 export const ANALYSIS_VERSION = 'heuristic-1' as const;
@@ -305,6 +306,7 @@ const bpsSchema = z.number().int().min(0).max(10000);
 export const riskAssessmentSchema = z
   .object({
     ruleVersion: z.string(),
+    scope: z.enum(['distribution', 'extended']).optional(),
     heuristic: z.literal(true),
     calibrated: z.literal(false),
     observedAt: z.iso.datetime(),
@@ -514,6 +516,7 @@ export const transactionSchema = z.object({
   events: z.array(z.object({ program: addressSchema, decoded: decodedSchema })),
 });
 export const reportSchema = z.object({
+  distributionRisk: riskAssessmentSchema.refine((r) => r.scope === 'distribution').optional(),
   earlyBuyers: z.lazy(() => earlyBuyersSchema).optional(),
   changes: z.lazy(() => positionComparisonSchema).optional(),
   targetedBalances: z.array(z.lazy(() => targetedBalanceSchema)).optional(),

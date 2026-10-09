@@ -10,26 +10,21 @@ const payloadSchema = z.object({
     quote: z.object({ address: z.string() }),
   }),
 });
-// Only chart enrichment: prices never enter report scores or reserve arithmetic.
-export async function readMarketChart(
-  mint: string,
-  pool: string,
-  signal: AbortSignal,
-  request: typeof fetch = fetch,
-): Promise<MarketChart> {
-  validAddress(mint);
-  validAddress(pool);
+const poolListSchema = z.object({
+  data: z
+    .array(
+      z.object({
+        attributes: z.object({ address: z.string() }),
+        relationships: z.object({
+          base_token: z.object({ data: z.object({ id: z.string() }) }),
+          quote_token: z.object({ data: z.object({ id: z.string() }) }),
+        }),
+      }),
+    )
+    .max(100),
+});
+async function chartPayload(url: URL, signal: AbortSignal, request: typeof fetch) {
   signal.throwIfAborted();
-  const url = new URL(
-    `https://api.geckoterminal.com/api/v2/networks/solana/pools/${pool}/ohlcv/minute`,
-  );
-  url.search = new URLSearchParams({
-    aggregate: '5',
-    limit: '100',
-    currency: 'usd',
-    token: mint,
-    include_empty_intervals: 'false',
-  }).toString();
   const response = await request(url, {
     signal,
     redirect: 'error',
@@ -57,12 +52,55 @@ export async function readMarketChart(
       chunks.push(value);
     }
     signal.throwIfAborted();
+    return parseProviderJson(Buffer.concat(chunks).toString('utf8'));
   } finally {
     signal.removeEventListener('abort', stop);
     await reader.cancel().catch(() => {});
     reader.releaseLock();
   }
-  const payload = payloadSchema.parse(parseProviderJson(Buffer.concat(chunks).toString('utf8')));
+}
+// Provider-identified pool for display only. This is not RPC verification of reserves or a
+// supported sell model. Pool token relationships AND the returned candle metadata must match.
+export async function discoverChartPool(
+  mint: string,
+  signal: AbortSignal,
+  request: typeof fetch = fetch,
+): Promise<string | null> {
+  validAddress(mint);
+  const url = new URL(`https://api.geckoterminal.com/api/v2/networks/solana/tokens/${mint}/pools`);
+  const payload = poolListSchema.parse(await chartPayload(url, signal, request));
+  for (const pool of payload.data) {
+    const tokens = [pool.relationships.base_token.data.id, pool.relationships.quote_token.data.id];
+    if (!tokens.includes(`solana_${mint}`)) continue;
+    try {
+      return validAddress(pool.attributes.address);
+    } catch {
+      /* skip invalid provider pool */
+    }
+  }
+  return null;
+}
+// Only chart enrichment: prices never enter report scores or reserve arithmetic.
+export async function readMarketChart(
+  mint: string,
+  pool: string,
+  signal: AbortSignal,
+  request: typeof fetch = fetch,
+): Promise<MarketChart> {
+  validAddress(mint);
+  validAddress(pool);
+  signal.throwIfAborted();
+  const url = new URL(
+    `https://api.geckoterminal.com/api/v2/networks/solana/pools/${pool}/ohlcv/minute`,
+  );
+  url.search = new URLSearchParams({
+    aggregate: '5',
+    limit: '100',
+    currency: 'usd',
+    token: mint,
+    include_empty_intervals: 'false',
+  }).toString();
+  const payload = payloadSchema.parse(await chartPayload(url, signal, request));
   if (![payload.meta.base.address, payload.meta.quote.address].includes(mint))
     throw new ProviderError('CHART_TOKEN_MISMATCH');
   const candles = payload.data.attributes.ohlcv_list

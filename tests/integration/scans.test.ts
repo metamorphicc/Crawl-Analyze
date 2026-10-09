@@ -64,13 +64,30 @@ describe('durable scans on real PostgreSQL/Redis', () => {
     let calls = 0;
     registerChart(app, e.config, e.storage, {
       namespace,
-      request: async () => {
+      request: async (url) => {
         calls++;
         await delay(100);
+        if (String(url).endsWith(`/tokens/${key(7)}/pools`))
+          return new Response(
+            JSON.stringify({
+              data: [
+                {
+                  attributes: { address: key(8) },
+                  relationships: {
+                    base_token: { data: { id: `solana_${key(7)}` } },
+                    quote_token: { data: { id: `solana_${key(3)}` } },
+                  },
+                },
+              ],
+            }),
+          );
         return new Response(
           JSON.stringify({
             data: { attributes: { ohlcv_list: [[1700000000, 1, 2, 0.5, 1.5, 10]] } },
-            meta: { base: { address: key(1) }, quote: { address: key(2) } },
+            meta: {
+              base: { address: String(url).includes(`/pools/${key(8)}/`) ? key(7) : key(1) },
+              quote: { address: key(3) },
+            },
           }),
         );
       },
@@ -125,9 +142,21 @@ describe('durable scans on real PostgreSQL/Redis', () => {
       expect((await e.store.report(report.id)).scenarios.scenarios[0]!.quotes[0]!.status).toBe(
         'unavailable',
       );
+      const external = await e.store.admit(key(7), 'preview', 'external-chart');
+      const externalLease = (await e.store.claim(external.job.id))!;
+      const externalReport = fixtureReport(externalLease.id, 'preview', key(7));
+      externalReport.scenarios.scenarios = [];
+      await e.store.finish(externalLease, externalReport);
+      await e.storage.redis.del(`${namespace}:gate`);
+      const discovered = (await app.inject(`/v1/tokens/${key(7)}/market`)).json();
+      expect(discovered).toMatchObject({ status: 'available', pool: key(8) });
+      expect(discovered.reasons).toContain('EXTERNAL_CHART_POOL_NOT_A_VERIFIED_SELL_MODEL');
+      expect(calls).toBe(3);
+      expect((await e.store.report(externalReport.id)).scenarios.scenarios).toEqual([]);
     } finally {
       await app.close();
       await e.storage.redis.del(`${namespace}:gate`, `${namespace}:${key(1)}:${key(2)}`);
+      await e.storage.redis.del(`${namespace}:pool:${key(7)}`, `${namespace}:${key(7)}:${key(8)}`);
       await e.close();
     }
   });

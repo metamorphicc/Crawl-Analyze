@@ -234,6 +234,8 @@ describe('signed reserves, spendable liquidity and failure states', () => {
     const id = identity();
     id.token2022Extensions = [1];
     expect(quoteSell(market(), id, '1000', options).status).toBe('unavailable');
+    id.token2022Extensions = [18, 19];
+    expect(quoteSell(market(), id, '1000000000000', options).status).toBe('available');
     const m = market();
     m.state.value.is_mayhem_mode = true;
     expect(quoteSell(m, identity(), '1000', options).status).toBe('unavailable');

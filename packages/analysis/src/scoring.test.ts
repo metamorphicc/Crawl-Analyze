@@ -28,6 +28,28 @@ const input = (): RiskInput => {
   };
 };
 describe('versioned distribution scoring and separate completeness', () => {
+  it('scores the distribution independently while leaving extended history/market unknown', () => {
+    const data = input();
+    data.identity.token2022Extensions = [18, 19];
+    data.signals = [];
+    data.supportedMarket = false;
+    data.holders[0]!.amount = '500';
+    data.identity.supply = '1450';
+    const distribution = assessRisk({ ...data, scope: 'distribution' });
+    expect(distribution).toMatchObject({ scope: 'distribution', eligible: true, riskScore: 45 });
+    expect(distribution.rules.map((r) => r.id)).not.toContain('CORROBORATED_CONTROL_GROUP');
+    expect(assessRisk(data)).toMatchObject({ eligible: false, riskScore: null });
+    data.identity.token2022Extensions.push(1);
+    expect(assessRisk({ ...data, scope: 'distribution' }).riskScore).toBeNull();
+  });
+  it('withholds even a distribution-only score for partial holders or unknown account flags', () => {
+    const data = input();
+    data.quality.status = 'partial';
+    expect(assessRisk({ ...data, scope: 'distribution' }).eligible).toBe(false);
+    data.quality.status = 'complete';
+    data.holders[0]!.frozenAmount = null;
+    expect(assessRisk({ ...data, scope: 'distribution' }).riskScore).toBeNull();
+  });
   it('uses a validated shared contract and clearly labels an eligible heuristic', () => {
     const result = assessRisk(input());
     expect(riskAssessmentSchema.safeParse(result).success).toBe(true);

@@ -1,5 +1,5 @@
 import { getMintDecoder } from '@solana-program/token';
-import { unwrapOption } from '@solana/kit';
+import { unwrapOption, getAddressDecoder } from '@solana/kit';
 import {
   mintIdentitySchema,
   PARSER_VERSION,
@@ -35,6 +35,14 @@ export function decodeMintIdentity(mint: string, account: RpcAccount): MintIdent
         length = view.getUint16(offset + 2, true);
       if (!type || offset + 4 + length > bytes.length || extensions.includes(type))
         throw new PublicError('INVALID_MINT', 'Malformed mint extensions');
+      if (type === 18 && length !== 64)
+        throw new PublicError('INVALID_MINT', 'Invalid metadata pointer');
+      if (
+        type === 19 &&
+        (length < 80 ||
+          getAddressDecoder().decode(bytes.subarray(offset + 36, offset + 68)) !== mint)
+      )
+        throw new PublicError('INVALID_MINT', 'Invalid token metadata mint');
       extensions.push(type);
       offset += 4 + length;
     }

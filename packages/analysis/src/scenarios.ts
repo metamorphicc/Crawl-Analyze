@@ -6,6 +6,7 @@ import type {
 } from '@crawlspider/contracts';
 import { unsigned, signed, ceilFee, Precise, ModelError } from './amounts.js';
 import { knownLayout, selectFees } from './fees.js';
+import { supportedMintSemantics } from '@crawlspider/contracts';
 export const MODEL_VERSION = 'pump-sell-1';
 export type QuoteOptions = {
   observedAt: string;
@@ -56,7 +57,7 @@ export function quoteSell(
     if (amount === 0n) throw new ModelError('BASE_INPUT_ZERO');
     if (amount > unsigned(identity.supply)) throw new ModelError('BASE_INPUT_EXCEEDS_MINT_SUPPLY');
     if (base + amount >= 1n << 64n) throw new ModelError('POST_BASE_RESERVE_OVERFLOW');
-    if (identity.token2022Extensions.length)
+    if (!supportedMintSemantics(identity.token2022Extensions))
       throw new ModelError('TOKEN_EXTENSION_SEMANTICS_UNVERIFIED');
     const mintStamp = Date.parse(identity.provenance.observedAt);
     if (!Number.isFinite(mintStamp) || mintStamp > now || now - mintStamp > 120000)

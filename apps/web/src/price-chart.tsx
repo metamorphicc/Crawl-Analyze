@@ -6,11 +6,32 @@ import { date } from './format.js';
 import { External } from './report.js';
 import { shortAddress } from './wallet-view.js';
 export function PriceChart({ mint, refresh = false }: { mint: string; refresh?: boolean }) {
+  const retryCount = useRef(0);
+  useEffect(() => {
+    retryCount.current = 0;
+  }, [mint]);
   const query = useResource(
     `/v1/tokens/${encodeURIComponent(mint)}/market`,
     marketChartSchema,
     refresh,
   );
+  useEffect(() => {
+    if (
+      retryCount.current >= 3 ||
+      query.data?.status !== 'unavailable' ||
+      !query.data.reasons.some((r) =>
+        ['CHART_BUDGET_BUSY', 'CHART_PROVIDER_UNAVAILABLE'].includes(r),
+      )
+    )
+      return;
+    // A shared public-provider gate can be occupied by another visitor. Retry automatically,
+    // including on saved reports, without resetting or re-running the token scan.
+    const timer = setTimeout(() => {
+      retryCount.current++;
+      void query.refetch();
+    }, 6500);
+    return () => clearTimeout(timer);
+  }, [query.data, query.refetch]);
   if (query.data && query.data.mint !== mint)
     return <p role="alert">The source returned candles for another token.</p>;
   return query.error ? (
@@ -22,7 +43,15 @@ export function PriceChart({ mint, refresh = false }: { mint: string; refresh?: 
     <p role="status">Loading candles…</p>
   ) : query.data.status === 'unavailable' ? (
     <p>
-      Chart unavailable: {query.data.reasons.join(', ')}. Missing prices are not replaced with zero.
+      Chart unavailable:{' '}
+      {query.data.reasons.includes('CHART_POOL_NOT_INDEXED')
+        ? 'The chart provider has not indexed a trading pool for this token yet.'
+        : query.data.reasons.includes('CHART_BUDGET_BUSY')
+          ? 'The market data source is busy. Automatic retries are limited.'
+          : query.data.reasons.includes('CHART_PROVIDER_UNAVAILABLE')
+            ? 'The market data source did not respond. Automatic retries are limited.'
+            : query.data.reasons.join(', ')}{' '}
+      Missing prices are not replaced with zero.
     </p>
   ) : (
     <Candles data={query.data} />

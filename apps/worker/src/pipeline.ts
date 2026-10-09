@@ -39,6 +39,7 @@ import {
   analyzeEarlyBuyers,
   comparePositions,
 } from '@crawlspider/analysis';
+import { historyPolicy } from './history-policy.js';
 export type Progress = (phase: string, preview?: AnalysisReport) => Promise<void>;
 export async function runScan(
   config: Config,
@@ -150,6 +151,7 @@ export async function runScan(
       },
     );
     const transactions = [
+      // Receipt lists are independent from the snapshot-only distribution score below.
       ...new Map(
         [...(launchWindow?.transactions || []), ...histories.flatMap((h) => h.transactions)].map(
           (t) => [t.signature, t],
@@ -164,6 +166,25 @@ export async function runScan(
       holdersComplete: holderResult.snapshot.enumerationComplete && quality.status === 'complete',
       observedAt,
       blockOrders,
+    });
+    const distributionRisk = assessRisk({
+      identity: holderResult.identity,
+      holders,
+      quality,
+      enumerationComplete: holderResult.snapshot.enumerationComplete,
+      signals: [],
+      graph: buildEvidenceGraph({
+        mint: lease.mint,
+        holders,
+        histories: [],
+        signals: [],
+        funding: { steps: [], nodesRead: 0, complete: false, reasons: ['FUNDING_NOT_READ'] },
+        labels,
+        observedAt,
+      }),
+      observedAt,
+      supportedMarket: false,
+      scope: 'distribution',
     });
     const report = reportSchema.parse({
       id: randomUUID(),
@@ -185,6 +206,7 @@ export async function runScan(
       },
       graph,
       risk,
+      distributionRisk,
       scenarios,
       signals,
       transactions: transactions.slice(0, 500),
@@ -205,31 +227,20 @@ export async function runScan(
   };
   const preview = makeReport(['WALLET_HISTORY_NOT_READ', 'LAUNCH_HISTORY_NOT_READ']);
   await progress('preview', preview);
-  if (lease.mode === 'preview' || signal.aborted) return preview;
-  const read = transactionReader(rpc, signal);
-  await progress('launch-history');
-  launchWindow = await readLaunchWindow(lease.mint, rpc, signal, read);
-  const orderSlots = launchWindow.transactions
-    .filter((t) => !t.failed)
-    .map((t) => t.slot)
-    .sort((a, b) => (BigInt(a) < BigInt(b) ? -1 : BigInt(a) > BigInt(b) ? 1 : 0));
-  blockOrders = await readBlockOrders(orderSlots, rpc, signal);
+  if (signal.aborted) return preview;
   const oldOwners = [
     ...new Set([
       ...(previous?.risk.metrics.flaggedOwners || []),
       ...(previous?.earlyBuyers?.buyers.map((b) => b.owner) || []),
     ]),
   ].slice(0, 100);
-  await progress('old-owner-positions');
-  targetedBalances = await readOwnerPositions(oldOwners, lease.mint, rpc, signal);
   await progress('wallet-history');
-  const selection = selectHistoryCandidates(holders, {
-    maxOwners: config.MAX_HISTORY_OWNERS,
-    minOwners: 25,
-    targetSupplyBps: 9500,
-  });
-  const options = { maxPages: 2, pageSize: 50, maxTransactions: 40, maxAccounts: 3 };
-  const prior = oldOwners.slice(0, Math.min(25, config.MAX_HISTORY_OWNERS)).map((owner) => ({
+  const policy = historyPolicy(lease.mode, config);
+  const historySignal = AbortSignal.any([signal, AbortSignal.timeout(policy.budgetMs)]);
+  const read = transactionReader(rpc, historySignal);
+  const selection = selectHistoryCandidates(holders, policy);
+  const options = policy.options;
+  const prior = oldOwners.slice(0, 3).map((owner) => ({
     owner,
     accounts:
       holders.find((h) => h.owner === owner)?.accounts ||
@@ -237,8 +248,8 @@ export async function runScan(
       [],
   }));
   const candidates = [
-    ...new Map([...prior, ...selection.candidates].map((h) => [h.owner, h])).values(),
-  ].slice(0, config.MAX_HISTORY_OWNERS);
+    ...new Map([...selection.candidates, ...prior].map((h) => [h.owner, h])).values(),
+  ].slice(0, policy.maxOwners);
   let lastHistoryUpdate = 0;
   const publishHistories = async (current: WalletHistory[]) => {
     histories = current;
@@ -252,21 +263,51 @@ export async function runScan(
       lastHistoryUpdate = Date.now();
     }
   };
-  const collected = await collectWalletHistories(candidates, rpc, signal, options, read, {
+  const collected = await collectWalletHistories(candidates, rpc, historySignal, options, read, {
     onUpdate: publishHistories,
   });
   histories = collected.histories;
+  const sampledReasons = [
+    'TARGETED_HISTORY_SAMPLE',
+    'RECENT_HISTORY_WINDOW_ONLY',
+    ...selection.reasons,
+    ...collected.reasons,
+    ...(historySignal.aborted ? ['HISTORY_SAMPLE_TIME_BUDGET'] : []),
+  ];
+  signals = histories.map((h) => summarizeWallet(h, lease.mint, null));
+  if (lease.mode === 'preview' || signal.aborted) {
+    await progress('analysis');
+    return makeReport([...sampledReasons, 'LAUNCH_HISTORY_NOT_READ', 'FUNDING_NOT_READ']);
+  }
   const extras = counterpartyCandidates(
     holders,
     histories,
     new Set(histories.map((h) => h.owner)),
-    Math.min(20, config.MAX_HISTORY_OWNERS - histories.length),
+    Math.min(2, policy.maxOwners - histories.length),
   );
   const primaryHistories = histories;
-  const extraHistories = await collectWalletHistories(extras, rpc, signal, options, read, {
+  const extraHistories = await collectWalletHistories(extras, rpc, historySignal, options, read, {
     onUpdate: (current) => publishHistories([...primaryHistories, ...current]),
   });
   histories = [...primaryHistories, ...extraHistories.histories];
+  await progress('launch-history', makeReport([...sampledReasons, 'FUNDING_NOT_READ']));
+  const launchSignal = AbortSignal.any([signal, AbortSignal.timeout(3000)]);
+  launchWindow = await readLaunchWindow(
+    lease.mint,
+    rpc,
+    launchSignal,
+    transactionReader(rpc, launchSignal),
+    { maxPages: 1, pageSize: 8, maxTransactions: 4, maxAccounts: 0 },
+  );
+  const orderSlots = launchWindow.transactions.filter((t) => !t.failed).map((t) => t.slot);
+  blockOrders = await readBlockOrders(orderSlots, rpc, launchSignal);
+  await progress('old-owner-positions');
+  targetedBalances = await readOwnerPositions(
+    oldOwners.slice(0, 3),
+    lease.mint,
+    rpc,
+    AbortSignal.any([signal, AbortSignal.timeout(2000)]),
+  );
   const launch = analyzeEarlyBuyers({
     mint: lease.mint,
     transactions: launchWindow.transactions,
@@ -301,6 +342,8 @@ export async function runScan(
   });
   await progress('wallet-history', makeReport(['FUNDING_NOT_READ']));
   await progress('funding');
+  const fundingSignal = AbortSignal.any([signal, AbortSignal.timeout(2500)]);
+  const fundingRead = transactionReader(rpc, fundingSignal);
   funding = await traceFunding(
     histories,
     new Map(signals.map((s) => [s.owner, s.entry?.slot || null])),
@@ -309,18 +352,18 @@ export async function runScan(
         owner,
         [],
         rpc,
-        signal,
-        { maxPages: 1, pageSize: 20, maxTransactions: 10, maxAccounts: 0 },
-        read,
+        fundingSignal,
+        { maxPages: 1, pageSize: 8, maxTransactions: 4, maxAccounts: 0 },
+        fundingRead,
       ),
-    signal,
+    fundingSignal,
   );
   await progress('analysis');
   return makeReport([
     ...(launch ? [] : ['VERIFIED_LAUNCH_NOT_IN_WINDOW']),
-    ...(oldOwners.length > 25 ? ['OLD_OWNER_HISTORY_CAP'] : []),
-    ...selection.reasons,
-    ...collected.reasons,
+    ...(oldOwners.length > 3 ? ['OLD_OWNER_HISTORY_CAP'] : []),
+    ...sampledReasons,
+    ...extraHistories.reasons,
     ...(signal.aborted ? ['DEEP_DEADLINE_PARTIAL'] : []),
   ]);
 }

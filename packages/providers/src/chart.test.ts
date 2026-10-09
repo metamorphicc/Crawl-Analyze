@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readMarketChart } from './chart.js';
+import { readMarketChart, discoverChartPool } from './chart.js';
 import { getAddressDecoder } from '@solana/kit';
 const mint = getAddressDecoder().decode(new Uint8Array(32).fill(1)),
   pool = getAddressDecoder().decode(new Uint8Array(32).fill(2));
@@ -9,6 +9,34 @@ const body = (address = mint, rows: unknown[] = [[1712534400, 1, 2, 0.5, 1.5, 12
     meta: { base: { address }, quote: { address: pool } },
   });
 describe('bounded independent chart enrichment', () => {
+  it('discovers a display pool on any venue without accepting unrelated token pairs', async () => {
+    const data = (token: string, address: string = pool) => ({
+      attributes: { address },
+      relationships: {
+        base_token: { data: { id: `solana_${token}` } },
+        quote_token: { data: { id: `solana_${pool}` } },
+      },
+    });
+    const result = await discoverChartPool(
+      mint,
+      AbortSignal.timeout(2000),
+      async (url, options) => {
+        expect(String(url)).toBe(
+          `https://api.geckoterminal.com/api/v2/networks/solana/tokens/${mint}/pools`,
+        );
+        expect(options?.redirect).toBe('error');
+        return new Response(JSON.stringify({ data: [data(pool), data(mint, 'bad'), data(mint)] }));
+      },
+    );
+    expect(result).toBe(pool);
+    expect(
+      await discoverChartPool(
+        mint,
+        AbortSignal.timeout(2000),
+        async () => new Response(JSON.stringify({ data: [data(pool)] })),
+      ),
+    ).toBeNull();
+  });
   it('uses only the fixed provider with explicit mint selection and preserves decimals', async () => {
     const response = body().replace('1.5', '1.500000000000000000000001');
     const chart = await readMarketChart(

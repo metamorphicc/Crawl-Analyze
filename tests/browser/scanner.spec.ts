@@ -7,6 +7,21 @@ async function scan(page: Page, input: string) {
   await page.getByRole('button', { name: 'Scan', exact: true }).click();
   await expect(page).toHaveURL(/\/token\/.*\?job=/);
 }
+test('quick scan is default and distribution score remains distinct from extended unknowns', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.getByLabel('Mode', { exact: true })).toHaveValue('preview');
+  await scan(page, key(8));
+  await expect(page.getByRole('link', { name: 'Permanent report link' })).toBeVisible();
+  await expect(page.getByText('Distribution-only score:', { exact: false })).toBeVisible();
+  await expect(page.getByText('Extended checks - coverage limits', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText('Full wallet histories are deliberately not crawled', { exact: false }),
+  ).toBeVisible();
+  await expect(page.locator('.verdict-score')).not.toContainText('?');
+  await expect(page.getByText('Insufficient data', { exact: true })).toHaveCount(0);
+});
 test('mint → persisted scan → preview → reload → report → evidence → terminal', async ({
   page,
 }) => {

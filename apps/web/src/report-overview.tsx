@@ -41,7 +41,8 @@ export function ReportOverview({
   report: AnalysisReport;
   provisional?: boolean;
 }) {
-  const score = r.risk.riskScore,
+  const displayedRisk = r.distributionRisk?.eligible ? r.distributionRisk : r.risk;
+  const score = displayedRisk.riskScore,
     metrics = r.risk.metrics;
   const fullSell = r.scenarios.scenarios.find((s) => s.fractionBps === 10000);
   const quotes = fullSell?.quotes.filter((q) => q.status === 'available') || [];
@@ -50,14 +51,14 @@ export function ReportOverview({
     return drop !== null && Number.isFinite(drop) ? Math.max(highest ?? 0, drop) : highest;
   }, null);
   return (
-    <div className={`verdict-content verdict-${r.risk.classification}`}>
+    <div className={`verdict-content verdict-${displayedRisk.classification}`}>
       <div className="verdict-heading">
         <span>Distribution risk</span>
         {score === null ? <ShieldQuestion size={18} /> : <ShieldAlert size={18} />}
       </div>
       <div className="verdict-score">
-        {score ?? '?'}
-        <span>/100</span>
+        {score ?? (r.risk.observedRiskPoints > 0 ? r.risk.observedRiskPoints : '?')}
+        <span>{score === null && r.risk.observedRiskPoints > 0 ? 'observed points' : '/100'}</span>
       </div>
       <div className="risk-spectrum" aria-hidden="true">
         <span style={{ width: `${score ?? 0}%` }} />
@@ -67,7 +68,7 @@ export function ReportOverview({
           ? 'Analysis in progress'
           : score === null
             ? 'Insufficient data'
-            : `${r.risk.classification} risk`}
+            : `${displayedRisk.classification} risk`}
       </strong>
       <p className="verdict-observed">
         Snapshot:{' '}
@@ -75,13 +76,38 @@ export function ReportOverview({
           {date(r.snapshot.quality.observedAt)}
         </time>
       </p>
-      {(score === null || provisional) && (
+      {displayedRisk.scope === 'distribution' && (
+        <p className="report-notice">
+          Distribution-only score: current holder concentration, mint/freeze authorities and account
+          flags. Trading history, related wallets and liquidity are separate checks; this is not a
+          complete token safety verdict.
+        </p>
+      )}
+      {score === null && r.risk.observedRiskPoints > 0 && (
+        <p className="report-notice">
+          Evidence already matches risk rules. These are partial observed points, not a final score;
+          missing checks can reveal additional risk.
+        </p>
+      )}
+      {(r.risk.riskScore === null || provisional) && (
         <div className="verdict-data-status">
-          <strong>{provisional ? 'Findings are updating' : 'Why the score is unavailable'}</strong>
+          <strong>
+            {provisional
+              ? 'Findings are updating'
+              : score === null
+                ? 'Why the score is unavailable'
+                : 'Extended checks - coverage limits'}
+          </strong>
           <p>
-            {r.graph.analyzedOwners.length} of {metrics.ownerCount} indexed wallets have a history
-            read. A read can still contain missing transactions.
+            {r.graph.analyzedOwners.length} of {metrics.ownerCount} indexed wallets sampled.
+            Recent-window reads can contain missing transactions and do not prove lifetime history.
           </p>
+          {r.limitations.includes('TARGETED_HISTORY_SAMPLE') && (
+            <p>
+              This scan prioritizes large balances. Full wallet histories are deliberately not
+              crawled; unexamined wallets and earlier activity remain unknown.
+            </p>
+          )}
           <ul>
             {provisional && (
               <li>
@@ -149,7 +175,7 @@ export function ReportOverview({
         <summary>Inspect score contributions</summary>
         <div className="rule-breakdown">
           <h3>What contributed</h3>
-          {r.risk.rules.map((rule) => (
+          {displayedRisk.rules.map((rule) => (
             <div className={`rule-meter rule-${rule.status}`} key={rule.id}>
               <div>
                 <span>{rule.id.replaceAll('_', ' ').replaceAll('-', ' ')}</span>
@@ -185,13 +211,17 @@ export function ReportOverview({
       )}
       <div className="coverage-meter">
         <div>
-          <span>Data completeness</span>
-          <strong>{r.risk.confidence.dataCompleteness}%</strong>
+          <span>
+            {displayedRisk.scope === 'distribution'
+              ? 'Distribution data coverage'
+              : 'Data completeness'}
+          </span>
+          <strong>{displayedRisk.confidence.dataCompleteness}%</strong>
         </div>
         <meter
           min={0}
           max={100}
-          value={r.risk.confidence.dataCompleteness}
+          value={displayedRisk.confidence.dataCompleteness}
           aria-label="Data completeness"
         />
         <small>Coverage of this scan, not prediction accuracy.</small>

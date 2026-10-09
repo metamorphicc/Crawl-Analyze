@@ -11,19 +11,13 @@ export async function readLaunchWindow(
   rpc: RpcTransport,
   signal: AbortSignal,
   read = transactionReader(rpc, signal),
+  options = { maxPages: 2, pageSize: 50, maxTransactions: 100, maxAccounts: 0 },
 ) {
   const curve = await pda(PUMP_PROGRAM, [
     new TextEncoder().encode('bonding-curve'),
     new Uint8Array(getAddressEncoder().encode(address(mint))),
   ]);
-  return readWalletHistory(
-    curve,
-    [],
-    rpc,
-    signal,
-    { maxPages: 2, pageSize: 50, maxTransactions: 100, maxAccounts: 0 },
-    read,
-  );
+  return readWalletHistory(curve, [], rpc, signal, options, read);
 }
 export async function readBlockOrders(slots: string[], rpc: RpcTransport, signal: AbortSignal) {
   const orders = new Map<string, string[]>();

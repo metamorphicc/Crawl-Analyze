@@ -156,7 +156,7 @@ function Layout() {
 }
 function Scanner({ initial = '' }: { initial?: string }) {
   const [input, setInput] = useState(initial),
-    [mode, setMode] = useState<'preview' | 'deep'>('deep'),
+    [mode, setMode] = useState<'preview' | 'deep'>('preview'),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
   const navigate = useNavigate(),
@@ -217,15 +217,15 @@ function Scanner({ initial = '' }: { initial?: string }) {
             value={mode}
             onChange={(e) => setMode(e.target.value as 'preview' | 'deep')}
           >
-            <option value="deep">Deep analysis</option>
-            <option value="preview">Preview analysis</option>
+            <option value="preview">Quick scan</option>
+            <option value="deep">Extended scan</option>
           </select>
         </div>
         <span className="scan-note">Read-only · No wallet connection</span>
       </div>
       <p className="helper" id="scan-help">
-        Preview checks distribution and markets. Deep analysis adds available wallet history and
-        relationships.
+        Quick scan checks distribution, authorities and recent history for up to 6 key wallets.
+        Extended scan checks up to 12 wallets and adds bounded launch and funding traces.
       </p>
       {status.isPending ? (
         <p role="status">Checking scanner availability…</p>

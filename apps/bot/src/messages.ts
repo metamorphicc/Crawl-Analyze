@@ -26,6 +26,7 @@ const labels: Record<string, string> = {
   analysis: 'Расчёт отчёта',
 };
 export function reportText(r: AnalysisReport, preview = false) {
+  const distribution = r.distributionRisk?.eligible ? r.distributionRisk : r.risk;
   const m = r.risk.metrics,
     q = r.snapshot.quality;
   const known = r.scenarios.scenarios
@@ -35,7 +36,13 @@ export function reportText(r: AnalysisReport, preview = false) {
     `<b>${preview ? 'Предварительный результат' : 'CrawlSpider · отчёт'}</b>`,
     `<code>${r.identity.mint}</code>`,
     `${labels[r.mode]} · ${escapeHtml(r.observedAt)}`,
-    `Риск распределения: <b>${r.risk.riskScore === null ? 'недостаточно данных' : `${r.risk.riskScore}/100`}</b>`,
+    `Риск распределения: <b>${distribution.riskScore === null ? 'недостаточно данных' : `${distribution.riskScore}/100`}</b>`,
+    ...(distribution.scope === 'distribution'
+      ? [
+          'Только распределение, полномочия и флаги счетов. Это не полная оценка безопасности токена.',
+          `Расширенная оценка: ${r.risk.riskScore === null ? 'недостаточно данных' : `${r.risk.riskScore}/100`}.`,
+        ]
+      : []),
     `Полнота данных: ${r.risk.confidence.dataCompleteness}% — не точность прогноза.`,
     `Держателей в индексе: ${m.ownerCount}. Top 1: ${pct(m.top1Bps)}; Top 10: ${pct(m.top10Bps)}.`,
     `Отмеченный баланс: ${pct(m.flaggedBps)}; гипотеза контроля: ${pct(m.largestHypothesisBps)}.`,

@@ -7,7 +7,9 @@ import type {
   RiskAssessment,
 } from '@crawlspider/contracts';
 import { unsigned, shareBps } from './amounts.js';
+import { supportedMintSemantics } from '@crawlspider/contracts';
 export const SCORING_VERSION = 'heuristic-1';
+export const DISTRIBUTION_SCORING_VERSION = 'distribution-1';
 export type RiskInput = {
   identity: MintIdentity;
   holders: OwnerBalance[];
@@ -17,6 +19,7 @@ export type RiskInput = {
   graph: EvidenceGraph;
   observedAt: string;
   supportedMarket: boolean;
+  scope?: 'distribution' | 'extended';
 };
 function fresh(stamp: string, now: number) {
   const at = Date.parse(stamp);
@@ -119,7 +122,8 @@ export function assessRisk(input: RiskInput): RiskAssessment {
     total + excluded === unsigned(identity.supply) &&
     fresh(quality.observedAt, now);
   const metadataKnown =
-    identity.token2022Extensions.length === 0 && fresh(identity.provenance.observedAt, now);
+    supportedMintSemantics(identity.token2022Extensions) &&
+    fresh(identity.provenance.observedAt, now);
   const rules: RiskAssessment['rules'] = [];
   const add = (
     id: string,
@@ -148,14 +152,15 @@ export function assessRisk(input: RiskInput): RiskAssessment {
     holdersKnown,
     ranked.slice(0, 10).map(([o]) => `owner:${o}`),
   );
-  add(
-    'CORROBORATED_CONTROL_GROUP',
-    groupBps,
-    2000,
-    25,
-    holdersKnown && historyBps >= 8000 && graph.limitations.length === 0,
-    [...evidenceIds],
-  );
+  if (input.scope !== 'distribution')
+    add(
+      'CORROBORATED_CONTROL_GROUP',
+      groupBps,
+      2000,
+      25,
+      holdersKnown && historyBps >= 8000 && graph.limitations.length === 0,
+      [...evidenceIds],
+    );
   for (const [id, active, points] of [
     ['ACTIVE_MINT_AUTHORITY', identity.mintAuthority, 20],
     ['ACTIVE_FREEZE_AUTHORITY', identity.freezeAuthority, 10],
@@ -170,23 +175,26 @@ export function assessRisk(input: RiskInput): RiskAssessment {
     });
   add('FROZEN_BALANCE', shareBps(frozen, total), 1000, 10, holdersKnown && flagsKnown);
   add('DELEGATED_BALANCE', shareBps(delegated, total), 1000, 5, holdersKnown && flagsKnown);
-  add(
-    'VERIFIED_EARLY_BUYERS',
-    shareBps(earlyAmount, total),
-    2500,
-    10,
-    holdersKnown && earlyKnownBps >= 8000,
-    [...evidenceIds],
-  );
+  if (input.scope !== 'distribution')
+    add(
+      'VERIFIED_EARLY_BUYERS',
+      shareBps(earlyAmount, total),
+      2500,
+      10,
+      holdersKnown && earlyKnownBps >= 8000,
+      [...evidenceIds],
+    );
   const reasons = new Set<string>();
   if (!holdersKnown) reasons.add('HOLDER_SNAPSHOT_PARTIAL_STALE_OR_UNRECONCILED');
   if (!total) reasons.add('NO_ELIGIBLE_BALANCE');
   if (ranked.length < 5) reasons.add('TOO_FEW_ELIGIBLE_OWNERS');
   if (!metadataKnown) reasons.add('MINT_METADATA_STALE_OR_EXTENSION_UNREVIEWED');
   if (!flagsKnown) reasons.add('ACCOUNT_FLAGS_UNKNOWN');
-  if (historyBps < 8000) reasons.add('USABLE_HISTORY_BELOW_80_PERCENT');
-  if (entryBps < 8000) reasons.add('OBSERVED_ENTRY_BELOW_80_PERCENT');
-  if (!input.supportedMarket) reasons.add('SUPPORTED_FRESH_MARKET_UNAVAILABLE');
+  if (input.scope !== 'distribution') {
+    if (historyBps < 8000) reasons.add('USABLE_HISTORY_BELOW_80_PERCENT');
+    if (entryBps < 8000) reasons.add('OBSERVED_ENTRY_BELOW_80_PERCENT');
+    if (!input.supportedMarket) reasons.add('SUPPORTED_FRESH_MARKET_UNAVAILABLE');
+  }
   for (const rule of rules) if (rule.status === 'unknown') reasons.add(`RULE_UNKNOWN:${rule.id}`);
   const observedPoints = Math.min(
       100,
@@ -194,17 +202,21 @@ export function assessRisk(input: RiskInput): RiskAssessment {
     ),
     eligible = reasons.size === 0;
   // Completeness of a retained observation window is not lifetime history or statistical accuracy.
-  const confidence = Math.min(
-    95,
-    (holdersKnown ? 35 : 0) +
-      (metadataKnown ? 10 : 0) +
-      (input.supportedMarket ? 15 : 0) +
-      Math.floor((historyBps * 25) / 10000) +
-      Math.floor((entryBps * 10) / 10000) +
-      Math.floor((earlyKnownBps * 5) / 10000),
-  );
+  const confidence =
+    input.scope === 'distribution'
+      ? (holdersKnown ? 75 : 0) + (metadataKnown ? 10 : 0) + (flagsKnown ? 10 : 0)
+      : Math.min(
+          95,
+          (holdersKnown ? 35 : 0) +
+            (metadataKnown ? 10 : 0) +
+            (input.supportedMarket ? 15 : 0) +
+            Math.floor((historyBps * 25) / 10000) +
+            Math.floor((entryBps * 10) / 10000) +
+            Math.floor((earlyKnownBps * 5) / 10000),
+        );
   return {
-    ruleVersion: SCORING_VERSION,
+    ruleVersion: input.scope === 'distribution' ? DISTRIBUTION_SCORING_VERSION : SCORING_VERSION,
+    scope: input.scope || 'extended',
     heuristic: true,
     calibrated: false,
     observedAt,
