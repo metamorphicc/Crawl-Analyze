@@ -4,13 +4,14 @@ Solana token intelligence: holder relationships, concentration, liquidity scenar
 and change alerts through a website and Telegram bot. Accepts Solana mint addresses and supported
 pump.fun, Axiom and GMGN links.
 
-**Current state: functional website through stage 09, locally verified.** Supported inputs,
+**Current state: implementation through stage 12; live release acceptance pending.** Supported inputs,
 holder indexing, Pump decoding, wallet evidence, heuristic risk, scenarios, durable scans and
-position comparisons are implemented. The [website](docs/STAGE_09.md) supports scan/progress/report/
-evidence/export/terminal journeys. [Early buyers and changes](docs/STAGE_08.md) and
-[queue/API recovery](docs/STAGE_07.md) use the same immutable reports. Telegram interaction and
-persistent watchlists are stages 10–11. Mainnet acceptance still needs local provider keys;
-website styling and spiders await the user's `design.md`.
+position comparisons are implemented. The English [website](docs/STAGE_09.md) supports scan/progress/report/
+evidence/export/terminal journeys, with a [CrawlScan-inspired visual and original moving spiders](docs/CRAWLSCAN_VISUAL.md).
+[Early buyers and changes](docs/STAGE_08.md) and [queue/API recovery](docs/STAGE_07.md) use the
+same immutable reports. Telegram interaction, linked watchlists, alerts and forward-observation
+tooling are implemented. Mainnet acceptance needs locally configured provider credentials.
+Stages 13–14 remain paused; the latest visual changes have not been validated, at the user's request.
 
 - [Complete build plan](docs/BUILD_PLAN.md)
 - [Architecture decisions](docs/DECISIONS.md)

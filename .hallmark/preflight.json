@@ -1,10 +1,10 @@
 {
   "date": "2026-10-09",
-  "scope": "Minimal styling of the existing application, explicitly authorized by user",
+  "scope": "In-place CrawlScan-inspired visual pass, explicitly authorized by user",
   "framework": "React/Vite",
   "fonts": ["Space Grotesk", "IBM Plex Mono"],
-  "paletteBefore": "Browser defaults; no existing colour tokens",
-  "motion": "No page animation; only button press with reduced-motion override",
+  "paletteBefore": "Existing dark green OKLCH tokens; retuned to almost-black and signal green",
+  "motion": "Original canvas crawlers, actual scan-state reaction, pause and reduced-motion override",
   "preserved": [
     "routes",
     "data semantics",
@@ -12,5 +12,6 @@
     "table containment",
     "evidence dialog"
   ],
-  "pending": "User-supplied final design.md and spider visual"
+  "reference": "https://crawlscan.fun/",
+  "pending": "User visual acceptance; checks explicitly disabled by user"
 }

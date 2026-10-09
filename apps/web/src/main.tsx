@@ -25,7 +25,8 @@ import { date, stateLabel, phaseLabel } from './format.js';
 import { useLiveJob } from './live.js';
 import { ReportView } from './report.js';
 import { Watchlist } from './watches.js';
-import { Bug, ScanLine, Bookmark, BookOpen, Activity, FileSearch } from 'lucide-react';
+import { ScanLine, Bookmark, BookOpen, Activity, Menu, ArrowUpRight } from 'lucide-react';
+import { SpiderEnvironment, SpiderMark, useSpiderActivity } from './spiders.js';
 import '@fontsource/space-grotesk/400.css';
 import '@fontsource/space-grotesk/500.css';
 import '@fontsource/space-grotesk/600.css';
@@ -90,44 +91,59 @@ function Layout() {
     document.getElementById('content')?.focus();
   }, [location]);
   return (
-    <>
+    <SpiderEnvironment route={location}>
       <a className="skip" href="#content">
         Skip to content
       </a>
       <header className="site-header">
         <div className="header-inner">
           <Link to="/" className="brand">
-            <Bug size={24} aria-hidden="true" />
+            <SpiderMark />
             CrawlSpider
           </Link>
-          <nav aria-label="Main navigation">
-            <Link to="/" activeOptions={{ exact: true }}>
-              <ScanLine size={16} aria-hidden="true" />
-              Scanner
-            </Link>
-            <Link to="/watchlist">
-              <Bookmark size={16} aria-hidden="true" />
-              Watchlist
-            </Link>
-            <Link to="/methodology">
-              <BookOpen size={16} aria-hidden="true" />
-              Methodology
-            </Link>
-            <Link to="/status">
-              <Activity size={16} aria-hidden="true" />
-              Services
-            </Link>
-          </nav>
+          <details className="site-menu" key={location}>
+            <summary aria-label="Open navigation menu">
+              <Menu size={18} aria-hidden="true" />
+              <span>Menu</span>
+            </summary>
+            <nav aria-label="Main navigation">
+              <Link to="/" activeOptions={{ exact: true }}>
+                <ScanLine size={16} aria-hidden="true" />
+                Scanner
+              </Link>
+              <Link to="/watchlist">
+                <Bookmark size={16} aria-hidden="true" />
+                Watchlist
+              </Link>
+              <Link to="/methodology">
+                <BookOpen size={16} aria-hidden="true" />
+                Methodology
+              </Link>
+              <Link to="/status">
+                <Activity size={16} aria-hidden="true" />
+                Services
+              </Link>
+            </nav>
+          </details>
         </div>
       </header>
       <main id="content" tabIndex={-1}>
         <Outlet />
       </main>
       <footer className="site-footer">
-        <span>CrawlSpider · Solana</span>
-        <span>Distribution risk - a heuristic.</span>
+        <div className="footer-brand">
+          <SpiderMark size={22} />
+          <span>CrawlSpider</span>
+        </div>
+        <div>
+          <span>Read-only Solana intelligence.</span>
+          <small>Distribution risk - a heuristic.</small>
+        </div>
+        <Link to="/methodology">
+          Read the methodology <ArrowUpRight size={14} aria-hidden="true" />
+        </Link>
       </footer>
-    </>
+    </SpiderEnvironment>
   );
 }
 function Scanner({ initial = '' }: { initial?: string }) {
@@ -167,19 +183,24 @@ function Scanner({ initial = '' }: { initial?: string }) {
   return (
     <form className="scanner-form" onSubmit={submit} aria-label="Token scanner" aria-busy={busy}>
       <label htmlFor="token-input">Mint or pump.fun / Axiom / GMGN link</label>
-      <input
-        id="token-input"
-        type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        required
-        maxLength={512}
-        autoComplete="off"
-        spellCheck={false}
-        placeholder="Mint address or https://pump.fun/coin/…"
-        aria-describedby="scan-help"
-        aria-invalid={!!error}
-      />
+      <div className="mint-entry">
+        <input
+          id="token-input"
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          required
+          maxLength={512}
+          autoComplete="off"
+          spellCheck={false}
+          placeholder="Mint address or https://pump.fun/coin/…"
+          aria-describedby="scan-help"
+          aria-invalid={!!error}
+        />
+        <button className="primary" type="submit" disabled={busy || !available} aria-busy={busy}>
+          {busy ? 'Submitting…' : 'Scan'} <ArrowUpRight size={17} aria-hidden="true" />
+        </button>
+      </div>
       <div className="scan-controls">
         <div className="mode-field">
           <label htmlFor="mode">Mode </label>
@@ -192,9 +213,7 @@ function Scanner({ initial = '' }: { initial?: string }) {
             <option value="preview">Preview analysis</option>
           </select>
         </div>
-        <button className="primary" type="submit" disabled={busy || !available} aria-busy={busy}>
-          {busy ? 'Submitting…' : 'Scan'}
-        </button>
+        <span className="scan-note">Read-only · No wallet connection</span>
       </div>
       <p className="helper" id="scan-help">
         Preview checks distribution and markets. Deep analysis adds available wallet history and
@@ -219,14 +238,22 @@ function Home() {
   const recent = useResource('/v1/reports', recentReportsSchema, true);
   return (
     <>
-      <div className="page-heading">
-        <h1>Solana token scanner</h1>
-        <p>Holder distribution, wallet relationships and on-chain evidence.</p>
-      </div>
-      <div className="scanner-workspace">
-        <div>
+      <section className="scanner-hero">
+        <div className="hero-network" data-crawl-anchor>
+          <span className="network-dot" />
+          Solana token intelligence · pump.fun
+        </div>
+        <h1 className="hero-title">
+          <span className="hero-line">Follow the wallets.</span>{' '}
+          <span className="hero-line accent-line">Trace the connections.</span>
+        </h1>
+        <p className="hero-description">
+          Holder distribution, wallet history and on-chain relationships. Open the evidence behind
+          every finding.
+        </p>
+        <div className="hero-scanner">
           <Scanner />
-          <details>
+          <details className="supported-links">
             <summary>Supported links</summary>
             <p>
               pump.fun/coin/… · gmgn.ai/sol/token/… · axiom.trade/meme/…?chain=sol or a mint
@@ -234,31 +261,89 @@ function Home() {
             </p>
           </details>
         </div>
+      </section>
+      <div className="home-feed-grid">
+        <section className="recent-reports" data-crawl-anchor>
+          <div className="feed-heading">
+            <h2>Recently crawled</h2>
+            <span>Open a saved report</span>
+          </div>
+          {recent.isPending && <p role="status">Loading…</p>}
+          {recent.error && <p role="alert">{errorMessage(recent.error)}</p>}
+          {recent.data?.length === 0 && (
+            <div className="empty-state">
+              <SpiderMark size={38} />
+              <p>
+                <strong>No completed scans yet.</strong>
+              </p>
+              <p>Completed reports will appear here with their timestamps and data quality.</p>
+            </div>
+          )}
+          <ul className="report-list">
+            {recent.data?.map((r) => (
+              <li key={r.id} className="report-row">
+                <Link
+                  to="/report/$id"
+                  params={{ id: r.id }}
+                  title={r.mint}
+                  aria-label={`Open report for ${r.mint}`}
+                >
+                  <span className="report-mint">
+                    {r.mint.slice(0, 7)}…{r.mint.slice(-5)}
+                  </span>
+                </Link>{' '}
+                <span className="report-mode">{stateLabel[r.mode]}</span>
+                <span className={`report-state report-state-${r.state}`}>
+                  {stateLabel[r.state]}
+                </span>
+                <time dateTime={r.observedAt}>{date(r.observedAt)}</time>
+              </li>
+            ))}
+          </ul>
+        </section>
         <Queue />
       </div>
-      <section className="recent-reports">
-        <h2>Recent reports</h2>
-        {recent.isPending && <p role="status">Loading…</p>}
-        {recent.error && <p role="alert">{errorMessage(recent.error)}</p>}
-        {recent.data?.length === 0 && (
-          <div className="empty-state">
-            <FileSearch size={24} aria-hidden="true" />
+      <section className="crawl-explainer">
+        <div className="explainer-heading">
+          <SpiderMark size={28} />
+          <h2>Inside the crawl</h2>
+        </div>
+        <ol className="crawl-steps">
+          <li>
+            <h3>Read the holders</h3>
             <p>
-              <strong>No completed scans yet.</strong>
+              Combine token accounts by owner. Separate verified infrastructure and show snapshot
+              coverage.
             </p>
-            <p>Completed reports will appear here with their timestamps and data quality.</p>
-          </div>
-        )}
-        <ul className="report-list">
-          {recent.data?.map((r) => (
-            <li key={r.id}>
-              <Link to="/report/$id" params={{ id: r.id }}>
-                {r.mint}
-              </Link>{' '}
-              · {date(r.observedAt)} · {stateLabel[r.mode]} · {stateLabel[r.state]}
-            </li>
-          ))}
-        </ul>
+            <span>Balances · Concentration · Supply</span>
+          </li>
+          <li>
+            <h3>Walk the history</h3>
+            <p>
+              Look at available trades, early entries and funding traces. Missing history stays
+              unknown.
+            </p>
+            <span>Trades · Entries · Funding</span>
+          </li>
+          <li>
+            <h3>Follow the links</h3>
+            <p>
+              Trace transfers and shared funding. Common control remains a hypothesis, with evidence
+              attached.
+            </p>
+            <span>Interactions · Hypotheses</span>
+          </li>
+          <li>
+            <h3>Inspect the findings</h3>
+            <p>
+              Review distribution risk and sell scenarios. Open transactions or continue in Axiom
+              and GMGN.
+            </p>
+            <Link to="/methodology">
+              How the rules work <ArrowUpRight size={13} aria-hidden="true" />
+            </Link>
+          </li>
+        </ol>
       </section>
     </>
   );
@@ -325,6 +410,11 @@ function Live({ id, mint }: { id: string; mint: string }) {
   const { job, report, error, connection } = useLiveJob(id),
     [cancelError, setCancelError] = useState(''),
     [cancelling, setCancelling] = useState(false);
+  const { setActivity } = useSpiderActivity();
+  useEffect(() => {
+    setActivity(job && job.mint === mint ? { id, state: job.state, phase: job.phase } : null);
+    return () => setActivity(null);
+  }, [id, mint, job?.mint, job?.state, job?.phase, setActivity]);
   if (job && job.mint !== mint) return <p role="alert">This scan belongs to another token.</p>;
   const active = job && ['queued', 'running'].includes(job.state),
     capability = cancellation(id);
@@ -345,7 +435,7 @@ function Live({ id, mint }: { id: string; mint: string }) {
   }
   return (
     <>
-      <section aria-label="Scan status">
+      <section className="scan-progress" aria-label="Scan status" data-crawl-anchor>
         <h2>Scan {id}</h2>
         <p role="status">
           {job

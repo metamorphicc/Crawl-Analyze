@@ -1,16 +1,20 @@
-/* CrawlSpider · minimal UI tokens; final visual direction waits for design.md. */
+/* CrawlSpider · studied CrawlScan palette, adapted to our Solana workbench. */
 :root {
   color-scheme: dark;
-  --color-paper: oklch(16% 0.009 155);
-  --color-paper-2: oklch(20% 0.009 155);
-  --color-paper-3: oklch(25% 0.009 155);
-  --color-rule: oklch(34% 0.01 155);
-  --color-field-rule: oklch(52% 0.01 155);
-  --color-muted: oklch(76% 0.01 155);
-  --color-ink: oklch(95% 0.005 155);
-  --color-accent: oklch(80% 0.14 155);
-  --color-accent-ink: oklch(18% 0.012 155);
-  --color-accent-surface: oklch(25% 0.025 155);
+  --color-paper: oklch(14% 0.008 220);
+  --color-paper-2: oklch(17% 0.009 220);
+  --color-paper-3: oklch(22% 0.012 220);
+  --color-rule: oklch(29% 0.012 220);
+  --color-field-rule: oklch(52% 0.012 220);
+  --color-muted: oklch(74% 0.015 220);
+  --color-ink: oklch(95% 0.006 220);
+  --color-accent: oklch(78% 0.25 142);
+  --color-accent-ink: oklch(18% 0.025 142);
+  --color-accent-surface: oklch(22% 0.045 142);
+  --color-spider-joint: oklch(83% 0.07 230);
+  --color-spider-thread: oklch(65% 0.04 230);
+  --color-spider-fill: oklch(20% 0.04 142);
+  --color-grid: oklch(26% 0.028 142);
   --color-error: oklch(82% 0.1 30);
   --color-error-surface: oklch(24% 0.025 30);
   --color-backdrop: oklch(10% 0.005 155 / 0.8);
@@ -29,6 +33,7 @@
   --text-body: 0.9375rem;
   --text-lg: 1.125rem;
   --text-title: clamp(1.75rem, 3vw, 2.25rem);
+  --text-display: clamp(2.625rem, 6.5vw, 5.625rem);
   --radius-sm: 0.375rem;
   --radius-md: 0.625rem;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);

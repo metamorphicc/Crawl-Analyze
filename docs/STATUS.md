@@ -4,7 +4,17 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
-**Minimal UI checkpoint: basic styling and an English website while the main build remains paused.**
+**Visual checkpoint: English CrawlScan-inspired website and moving crawlers; main build remains paused.**
+
+The user authorized https://crawlscan.fun/ as a live visual reference, with moving spiders as the
+principal detail. Reference typography, surfaces, composition and articulated motion were observed
+in the browser. The site now uses a large left-aligned headline, inline scanner, compact report
+feed, menu navigation and original canvas spiders. Ambient crawling is explicitly decorative;
+scan motion follows actual job state/phase and settles when the scan terminates. Pause persists,
+system reduced-motion is respected, hidden tabs suspend rendering, and the overlay never takes input.
+See `docs/CRAWLSCAN_VISUAL.md`. No tests, typechecks or browser validation of our changes were run
+at the user's explicit request. The frontend is rebuilt only to deliver the changed assets.
+Stages 13–14 remain paused; visual acceptance belongs to the user.
 
 Stage 12 checkpoint: `052a38e`. The site now has a shared dark palette, self-hosted fonts,
 active navigation, clear scan controls, queue and empty states, readable tables, evidence dialogs
@@ -13,7 +23,7 @@ English. The footer uses a simple hyphen: "Distribution risk - a heuristic."
 Existing routes and backend behavior are preserved. Nine browser journeys passed before the final
 chart colours and English copy edits. Their text assertions were updated, but no further checks
 were run at the user's explicit request. The local preview is rebuilt for these changes.
-Final design/spider visuals still await the user's document. Stages 13–14 remain paused.
+This earlier minimal pass is superseded by the reference visual checkpoint above.
 
 **Stage 12: forward collection and reproducible evaluation implemented; empirical calibration pending.**
 

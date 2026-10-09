@@ -56,10 +56,10 @@ alternative to graph navigation.
 
 ## 3. Visual direction
 
-**User clarification, 2026-10-09:** a minimal usable UI is required now. The final visual
-implementation waits for the user's `design.md` / `desigh.md`.
-The ideas below describe the final design, which remains a proposal pending that document.
-Basic styling and an English website interface are authorized now. Stages 13–14 remain paused
+**User clarification, 2026-10-09:** an English website with a CrawlScan-inspired visual is
+authorized now, with moving spiders as the principal detail. The live https://crawlscan.fun/
+reference supersedes waiting for `design.md` / `desigh.md` for this visual pass.
+The interface keeps its own brand, report semantics and real-data states. Stages 13–14 remain paused
 at the user's request. All stage commits are made directly on `main`, never pushed.
 
 Working name: CrawlSpider. A dark investigative workbench with a large relationship map beside
