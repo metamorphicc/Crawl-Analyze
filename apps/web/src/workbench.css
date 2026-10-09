@@ -980,3 +980,123 @@ meter::-moz-meter-bar {
     display: none;
   }
 }
+
+/* Shared homepage anatomy above a separate, deliberately defocused network. */
+.wallet-scene-stage {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  contain: paint;
+  background: var(--color-paper);
+}
+.wallet-scene-stage > .wallet-web {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+.wallet-scene-background,
+.wallet-scene-spiders {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+.wallet-scene-background {
+  z-index: 0;
+  opacity: 0.48;
+  filter: blur(3px);
+  transform: scale(1.04);
+  mask-image: radial-gradient(ellipse at center, transparent 8%, black 76%);
+}
+.wallet-scene-spiders {
+  z-index: 2;
+}
+.wallet-scene-stage .map-grid-dot {
+  opacity: 0.5;
+}
+.wallet-contact {
+  fill: none;
+  stroke: var(--color-spider-joint);
+  stroke-width: 1;
+  opacity: 0.12;
+  pointer-events: none;
+  filter: drop-shadow(0 0 4px var(--color-spider-joint));
+}
+.map-core-halo circle,
+.map-core-orbit circle {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 1;
+  pointer-events: none;
+}
+.map-core-halo {
+  opacity: 0.22;
+  filter: drop-shadow(0 0 5px var(--color-accent));
+}
+.map-core-orbit {
+  opacity: 0.55;
+}
+.map-core-orbit circle + circle {
+  stroke: var(--color-spider-joint);
+  opacity: 0.55;
+}
+.map-scan-signals,
+.evidence-packet {
+  pointer-events: none;
+}
+.map-scan-signals path {
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+}
+.scan-signal-out {
+  fill: var(--color-accent);
+  stroke: var(--color-accent);
+  filter: drop-shadow(0 0 4px var(--color-accent));
+}
+.scan-signal-in {
+  fill: var(--color-spider-joint);
+  stroke: var(--color-spider-joint);
+  filter: drop-shadow(0 0 3px var(--color-spider-joint));
+}
+.evidence-packet {
+  fill: var(--color-spider-joint);
+  filter: drop-shadow(0 0 3px var(--color-spider-joint));
+}
+.edge-inferred-control .evidence-packet {
+  fill: var(--color-warning);
+  filter: drop-shadow(0 0 3px var(--color-warning));
+}
+.edge-behavioral-hypothesis .evidence-packet {
+  fill: var(--color-muted);
+  filter: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wallet-scene-spiders {
+    display: none;
+  }
+}
+
+/* The abstract network belongs to the whole website, across every route. */
+#root {
+  position: relative;
+  isolation: isolate;
+}
+.site-network-background {
+  position: fixed;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100dvh;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.48;
+  filter: blur(3px);
+  transform: scale(1.04);
+  mask-image: radial-gradient(ellipse at center, rgb(0 0 0 / 0.3) 15%, black 85%);
+}
+.wallet-scene-stage {
+  background: transparent;
+}

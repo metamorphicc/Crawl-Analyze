@@ -8,10 +8,14 @@ const SpiderContext = createContext<{
   setActivity: (activity: Activity) => void;
   activity: Activity;
   still: boolean;
+  motionPaused: boolean;
+  toggleMotion: () => void;
 }>({
   setActivity: () => {},
   activity: null,
   still: false,
+  motionPaused: false,
+  toggleMotion: () => {},
 });
 export const useSpiderActivity = () => useContext(SpiderContext);
 
@@ -44,48 +48,58 @@ export function SpiderEnvironment({ children, route }: { children: ReactNode; ro
     preference.addEventListener('change', change);
     return () => preference.removeEventListener('change', change);
   }, []);
+  const toggleMotion = () => {
+    if (reduced) return;
+    const next = !paused;
+    setPaused(next);
+    try {
+      localStorage.setItem('crawlspider:pause-motion', String(next));
+    } catch {
+      /* Motion controls also work when storage is restricted. */
+    }
+  };
   const settled = activity !== null && !['queued', 'running'].includes(activity.state);
   return (
-    <SpiderContext.Provider value={{ setActivity, activity, still: paused || reduced || settled }}>
+    <SpiderContext.Provider
+      value={{
+        setActivity,
+        activity,
+        still: paused || reduced || settled,
+        motionPaused: paused || reduced,
+        toggleMotion,
+      }}
+    >
       {children}
-      {route === '/' && (
-        <div className="crawler-control">
-          <span className="crawler-mode">
-            {activity
-              ? `${stateLabel[activity.state] || activity.state} · ${phaseLabel[activity.phase] || activity.phase}`
-              : 'Ambient crawlers'}
-          </span>
-          <button
-            className="motion-toggle"
-            type="button"
-            disabled={reduced}
-            aria-pressed={paused || reduced}
-            aria-label={
-              reduced
-                ? 'Crawler motion disabled by system preference'
-                : paused
-                  ? 'Resume crawlers'
-                  : 'Pause crawlers'
-            }
-            onClick={() => {
-              const next = !paused;
-              setPaused(next);
-              try {
-                localStorage.setItem('crawlspider:pause-motion', String(next));
-              } catch {
-                /* Motion controls also work when storage is restricted. */
-              }
-            }}
-          >
-            {paused || reduced ? (
-              <Play size={14} aria-hidden="true" />
-            ) : (
-              <Pause size={14} aria-hidden="true" />
-            )}
-            <span>{reduced ? 'Reduced motion' : paused ? 'Resume' : 'Pause'}</span>
-          </button>
-        </div>
-      )}
+      <div className="crawler-control">
+        <span className="crawler-mode">
+          {activity
+            ? `${stateLabel[activity.state] || activity.state} · ${phaseLabel[activity.phase] || activity.phase}`
+            : route === '/'
+              ? 'Ambient crawlers'
+              : 'Ambient network'}
+        </span>
+        <button
+          className="motion-toggle"
+          type="button"
+          disabled={reduced}
+          aria-pressed={paused || reduced}
+          aria-label={
+            reduced
+              ? 'Scene motion disabled by system preference'
+              : paused
+                ? 'Resume scene motion'
+                : 'Pause scene motion'
+          }
+          onClick={toggleMotion}
+        >
+          {paused || reduced ? (
+            <Play size={14} aria-hidden="true" />
+          ) : (
+            <Pause size={14} aria-hidden="true" />
+          )}
+          <span>{reduced ? 'Reduced motion' : paused ? 'Resume' : 'Pause'}</span>
+        </button>
+      </div>
     </SpiderContext.Provider>
   );
 }

@@ -3,6 +3,8 @@ import type { AnalysisReport, RelationshipEdge } from '@crawlspider/contracts';
 import { Minus, Plus, RotateCcw, Pause, Play, ArrowUpRight } from 'lucide-react';
 import { percent, units } from './format.js';
 import { shareBps, shortAddress, WalletFlags } from './wallet-view.js';
+import { WalletScene } from './wallet-scene.js';
+import { useSpiderActivity } from './spiders.js';
 
 type Point = { x: number; y: number };
 type MapNode = Point & { owner: string; amount: string; flagged: boolean; indexed: boolean };
@@ -18,13 +20,13 @@ export function RelationshipMap({
   onEvidence?: ((edge: RelationshipEdge) => void) | undefined;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
-  const [paused, setPaused] = useState(false);
+  const { motionPaused: paused, toggleMotion } = useSpiderActivity();
   const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
   const svg = useRef<SVGSVGElement>(null),
-    host = useRef<HTMLDivElement>(null);
+    stage = useRef<HTMLDivElement>(null),
+    spiderCanvas = useRef<HTMLCanvasElement>(null),
+    scene = useRef<WalletScene | null>(null);
   const drag = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
-  const animationTime = useRef(0);
-  const trails = useRef<Point[][]>(Array.from({ length: 6 }, () => []));
   const pattern = useId();
   const nodes = useMemo(() => {
     if (!report) return [];
@@ -80,109 +82,18 @@ export function RelationshipMap({
   const related =
     report?.graph.edges.filter((edge) => edge.from === selected || edge.to === selected) || [];
   useEffect(() => {
-    const container = host.current,
-      element = svg.current;
-    if (!container || !element || !active || !nodes.length) return;
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-    let visible = true,
-      last = 0,
-      frame = 0;
-    const crawlers = [...element.querySelectorAll<SVGGElement>('[data-crawler]')];
-    const traces = [...element.querySelectorAll<SVGPathElement>('[data-trace]')];
-    const legs = crawlers.map((crawler) => [
-      ...crawler.querySelectorAll<SVGPathElement>('[data-leg]'),
-    ]);
-    const feet = crawlers.map((crawler) => [
-      ...crawler.querySelectorAll<SVGCircleElement>('[data-foot]'),
-    ]);
-    const paths = trails.current;
-    function schedule() {
-      const running = visible && !document.hidden && !paused && !reduced.matches;
-      if (running && !frame) {
-        last = 0;
-        frame = requestAnimationFrame(animate);
-      } else if (!running && frame) {
-        cancelAnimationFrame(frame);
-        frame = 0;
-      }
-      if (reduced.matches)
-        crawlers.forEach((crawler) => {
-          crawler.style.opacity = '0';
-        });
-    }
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = Boolean(entry?.isIntersecting);
-      schedule();
-    });
-    observer.observe(container);
-    function animate(now: number) {
-      frame = 0;
-      const delta = last ? Math.min((now - last) / 1000, 0.04) : 0;
-      last = now;
-      if (visible && !document.hidden && !paused && !reduced.matches) {
-        animationTime.current += delta;
-        crawlers.forEach((crawler, i) => {
-          const elapsed = animationTime.current + i * 1.14;
-          const leg = Math.floor(elapsed / 2.6),
-            fraction = (elapsed % 2.6) / 2.6;
-          const start =
-            leg % 2 === 0
-              ? { x: 500, y: 280 }
-              : nodes[(Math.floor(leg / 2) * 3 + i * 4) % nodes.length]!;
-          const end =
-            leg % 2 === 0
-              ? nodes[(Math.floor(leg / 2) * 3 + i * 4) % nodes.length]!
-              : { x: 500, y: 280 };
-          const position = {
-            x: start.x + (end.x - start.x) * fraction,
-            y: start.y + (end.y - start.y) * fraction,
-          };
-          const angle = (Math.atan2(end.y - start.y, end.x - start.x) * 180) / Math.PI;
-          crawler.setAttribute(
-            'transform',
-            `translate(${position.x} ${position.y}) rotate(${angle})`,
-          );
-          legs[i]!.forEach((path, n) => {
-            const side = n < 4 ? -1 : 1,
-              pair = n % 4;
-            const gait = Math.sin(elapsed * 17 + (n % 2) * Math.PI);
-            const hip = -8 + pair * 5,
-              tipX = hip + (pair - 1.5) * 9 + gait * 8;
-            const tipY = side * (27 + Math.max(0, gait) * 5);
-            path.setAttribute(
-              'd',
-              `M ${hip} ${side * 5} L ${tipX - 8} ${side * 17} L ${tipX} ${tipY}`,
-            );
-            feet[i]![n]!.setAttribute('cx', String(tipX));
-            feet[i]![n]!.setAttribute('cy', String(tipY));
-          });
-          const trail = paths[i]!;
-          trail.push(position);
-          if (trail.length > 26) trail.shift();
-          traces[i]?.setAttribute(
-            'd',
-            trail.map((point, n) => `${n ? 'L' : 'M'} ${point.x} ${point.y}`).join(' '),
-          );
-          crawler.style.opacity = '1';
-        });
-      } else if (reduced.matches) {
-        crawlers.forEach((crawler) => {
-          crawler.style.opacity = '0';
-        });
-      }
-      if (visible && !document.hidden && !paused && !reduced.matches)
-        frame = requestAnimationFrame(animate);
-    }
-    reduced.addEventListener('change', schedule);
-    document.addEventListener('visibilitychange', schedule);
-    schedule();
+    if (!stage.current || !svg.current || !spiderCanvas.current) return;
+    if (!spiderCanvas.current.getContext('2d')) return;
+    const controller = new WalletScene(stage.current, svg.current, spiderCanvas.current);
+    scene.current = controller;
     return () => {
-      cancelAnimationFrame(frame);
-      observer.disconnect();
-      reduced.removeEventListener('change', schedule);
-      document.removeEventListener('visibilitychange', schedule);
+      controller.destroy();
+      scene.current = null;
     };
-  }, [active, nodes, paused]);
+  }, []);
+  useEffect(() => {
+    scene.current?.update({ nodes, edges, viewport, mint, active, paused });
+  }, [nodes, edges, viewport, mint, active, paused]);
   const zoom = (direction: number) =>
     setViewport((v) => ({ ...v, zoom: Math.max(0.75, Math.min(2.5, v.zoom + direction * 0.25)) }));
   function beginDrag(event: PointerEvent<SVGSVGElement>) {
@@ -201,7 +112,7 @@ export function RelationshipMap({
     }));
   }
   return (
-    <div className="relationship-map" ref={host}>
+    <div className="relationship-map">
       <div className="map-toolbar">
         <div>
           <strong>Wallet web</strong>
@@ -210,15 +121,13 @@ export function RelationshipMap({
           </span>
         </div>
         <div className="map-controls">
-          {active && (
-            <button
-              aria-label={paused ? 'Resume crawler animation' : 'Pause crawler animation'}
-              aria-pressed={paused}
-              onClick={() => setPaused(!paused)}
-            >
-              {paused ? <Play size={16} /> : <Pause size={16} />}
-            </button>
-          )}
+          <button
+            aria-label={paused ? 'Resume scene motion' : 'Pause scene motion'}
+            aria-pressed={paused}
+            onClick={toggleMotion}
+          >
+            {paused ? <Play size={16} /> : <Pause size={16} />}
+          </button>
           <button aria-label="Zoom out" disabled={viewport.zoom <= 0.75} onClick={() => zoom(-1)}>
             <Minus size={16} />
           </button>
@@ -230,129 +139,161 @@ export function RelationshipMap({
           </button>
         </div>
       </div>
-      <svg
-        ref={svg}
-        className="wallet-web"
-        viewBox={`${500 + viewport.x - 500 / viewport.zoom} ${280 + viewport.y - 280 / viewport.zoom} ${1000 / viewport.zoom} ${560 / viewport.zoom}`}
-        role="group"
-        aria-label="Observed wallet map. Use address buttons to inspect wallets; relationship evidence is also available below."
-        onPointerDown={beginDrag}
-        onPointerMove={moveDrag}
-        onPointerUp={() => {
-          drag.current = null;
-        }}
-        onPointerCancel={() => {
-          drag.current = null;
-        }}
-      >
-        <defs>
-          <pattern id={pattern} width="24" height="24" patternUnits="userSpaceOnUse">
-            <circle cx="1" cy="1" r="0.8" className="map-grid-dot" />
-          </pattern>
-        </defs>
-        <rect x="-1000" y="-1000" width="3000" height="2500" fill={`url(#${pattern})`} />
-        <g aria-hidden="true" className="map-orbits">
-          <circle cx="500" cy="280" r="80" />
-          <circle cx="500" cy="280" r="108" />
-          <circle cx="500" cy="280" r="138" />
-        </g>
-        <g aria-hidden="true">
-          {nodes
-            .filter((node) => node.indexed)
-            .map((node) => (
-              <path
-                key={node.owner}
-                d={`M 500 280 L ${node.x} ${node.y}`}
-                className="holder-spoke"
-              />
-            ))}
-        </g>
-        {edges.map((edge) => {
-          const from = positions.get(edge.from)!,
-            to = positions.get(edge.to)!;
-          return (
-            <g
-              key={edge.id}
-              data-edge="true"
-              role={onEvidence ? 'button' : undefined}
-              tabIndex={onEvidence ? 0 : undefined}
-              aria-label={
-                onEvidence
-                  ? `Open ${edge.kind} evidence between ${shortAddress(edge.from)} and ${shortAddress(edge.to)}`
-                  : undefined
-              }
-              onClick={() => onEvidence?.(edge)}
-              onKeyDown={(event) => {
-                if (onEvidence && (event.key === 'Enter' || event.key === ' ')) {
-                  event.preventDefault();
-                  onEvidence(edge);
-                }
-              }}
-              className={`map-edge edge-${edge.strength} ${selected && edge.from !== selected && edge.to !== selected ? 'is-muted' : ''}`}
-            >
-              <title>
-                {edge.kind}: {edge.explanation}
-              </title>
-              <path
-                d={`M ${from.x} ${from.y} Q ${(from.x + to.x) / 2} ${(from.y + to.y) / 2 + 38} ${to.x} ${to.y}`}
-              />
-              {onEvidence && (
+      <div className="wallet-scene-stage" ref={stage}>
+        <svg
+          ref={svg}
+          className="wallet-web"
+          viewBox={`${500 + viewport.x - 500 / viewport.zoom} ${280 + viewport.y - 280 / viewport.zoom} ${1000 / viewport.zoom} ${560 / viewport.zoom}`}
+          role="group"
+          aria-label="Observed wallet map. Use address buttons to inspect wallets; relationship evidence is also available below."
+          onPointerDown={beginDrag}
+          onPointerMove={moveDrag}
+          onPointerUp={() => {
+            drag.current = null;
+          }}
+          onPointerCancel={() => {
+            drag.current = null;
+          }}
+        >
+          <defs>
+            <pattern id={pattern} width="24" height="24" patternUnits="userSpaceOnUse">
+              <circle cx="1" cy="1" r="0.8" className="map-grid-dot" />
+            </pattern>
+          </defs>
+          <rect x="-1000" y="-1000" width="3000" height="2500" fill={`url(#${pattern})`} />
+          <g aria-hidden="true" className="map-orbits">
+            <circle cx="500" cy="280" r="80" />
+            <circle cx="500" cy="280" r="108" />
+            <circle cx="500" cy="280" r="138" />
+          </g>
+          <g aria-hidden="true">
+            {nodes
+              .filter((node) => node.indexed)
+              .map((node) => (
                 <path
-                  className="map-edge-hit"
+                  key={node.owner}
+                  data-spoke={node.owner}
+                  d={`M 500 280 L ${node.x} ${node.y}`}
+                  className="holder-spoke"
+                />
+              ))}
+          </g>
+          {edges.map((edge) => {
+            const from = positions.get(edge.from)!,
+              to = positions.get(edge.to)!;
+            return (
+              <g
+                key={edge.id}
+                data-edge="true"
+                data-map-edge={edge.id}
+                role={onEvidence ? 'button' : undefined}
+                tabIndex={onEvidence ? 0 : undefined}
+                aria-label={
+                  onEvidence
+                    ? `Open ${edge.kind} evidence between ${shortAddress(edge.from)} and ${shortAddress(edge.to)}`
+                    : undefined
+                }
+                onClick={() => onEvidence?.(edge)}
+                onKeyDown={(event) => {
+                  if (onEvidence && (event.key === 'Enter' || event.key === ' ')) {
+                    event.preventDefault();
+                    onEvidence(edge);
+                  }
+                }}
+                className={`map-edge edge-${edge.strength} ${selected && edge.from !== selected && edge.to !== selected ? 'is-muted' : ''}`}
+              >
+                <title>
+                  {edge.kind}: {edge.explanation}
+                </title>
+                <path
                   d={`M ${from.x} ${from.y} Q ${(from.x + to.x) / 2} ${(from.y + to.y) / 2 + 38} ${to.x} ${to.y}`}
                 />
-              )}
-            </g>
-          );
-        })}
-        <g className="map-center">
-          <circle cx="500" cy="280" r="68" />
-          <text x="500" y="272">
-            {shortAddress(mint)}
-          </text>
-          <text x="500" y="297" className="center-detail">
-            {report ? `${report.risk.metrics.ownerCount} indexed holders` : 'Awaiting data'}
-          </text>
-        </g>
-        {nodes.map((node) => (
-          <foreignObject key={node.owner} x={node.x - 55} y={node.y - 19} width="110" height="38">
-            <button
-              className={`map-wallet ${node.flagged ? 'is-flagged' : ''} ${selected === node.owner ? 'is-selected' : ''}`}
-              title={node.owner}
-              aria-label={`Inspect wallet ${node.owner}${node.flagged ? ', risk evidence' : ''}`}
-              aria-pressed={selected === node.owner}
-              onClick={() => setSelected(selected === node.owner ? null : node.owner)}
-            >
-              {shortAddress(node.owner)}
-            </button>
-          </foreignObject>
-        ))}
-        {active && nodes.length > 0 && (
-          <g aria-hidden="true" className="graph-crawlers">
-            {Array.from({ length: Math.min(6, nodes.length) }, (_, i) => (
-              <path key={`trace-${i}`} data-trace="true" className="crawler-trace" />
-            ))}
-            {Array.from({ length: Math.min(6, nodes.length) }, (_, i) => (
-              <g
-                data-crawler="true"
-                className="graph-crawler"
-                key={i}
-                transform="translate(500 280)"
-                style={{ opacity: 0 }}
-              >
-                {Array.from({ length: 8 }, (_, n) => (
-                  <path data-leg={n} key={`leg-${n}`} className="crawler-leg" />
-                ))}
-                <ellipse cx="-4" cy="0" rx="14" ry="8" className="crawler-body" />
-                <circle cx="13" cy="0" r="6" className="crawler-body" />
-                {Array.from({ length: 8 }, (_, n) => (
-                  <circle data-foot={n} key={`foot-${n}`} r="2.5" className="crawler-foot" />
-                ))}
+                <circle
+                  data-evidence-packet={edge.id}
+                  className="evidence-packet"
+                  r="2.5"
+                  cx={from.x}
+                  cy={from.y}
+                  aria-hidden="true"
+                />
+                {onEvidence && (
+                  <path
+                    className="map-edge-hit"
+                    d={`M ${from.x} ${from.y} Q ${(from.x + to.x) / 2} ${(from.y + to.y) / 2 + 38} ${to.x} ${to.y}`}
+                  />
+                )}
               </g>
-            ))}
+            );
+          })}
+          <g
+            aria-hidden="true"
+            className="map-core-halo"
+            data-core-halo="true"
+            transform="translate(500 280)"
+          >
+            <circle r="84" />
           </g>
-        )}
-      </svg>
+          <g aria-hidden="true" className="map-core-orbit" data-core-orbit="true">
+            <circle cx="500" cy="280" r="96" strokeDasharray="45 112 8 112" />
+            <circle cx="500" cy="280" r="121" strokeDasharray="14 175 35 175" />
+          </g>
+          <g aria-hidden="true" className="map-scan-signals">
+            {nodes
+              .filter((node) => node.indexed)
+              .map((node) => (
+                <g key={node.owner}>
+                  <g
+                    data-signal-out={node.owner}
+                    className="scan-signal-out"
+                    style={{ opacity: 0 }}
+                  >
+                    <path d="M -20 0 L 0 0" />
+                    <circle r="3" />
+                  </g>
+                  <g data-signal-in={node.owner} className="scan-signal-in" style={{ opacity: 0 }}>
+                    <path d="M -16 0 L 0 0" />
+                    <circle r="2.5" />
+                  </g>
+                </g>
+              ))}
+          </g>
+          <g className="map-center" data-crawl-anchor="true">
+            <circle cx="500" cy="280" r="68" />
+            <text x="500" y="272">
+              {shortAddress(mint)}
+            </text>
+            <text x="500" y="297" className="center-detail">
+              {report ? `${report.risk.metrics.ownerCount} indexed holders` : 'Awaiting data'}
+            </text>
+          </g>
+          {nodes.map((node) => (
+            <g key={node.owner} data-wallet-group={node.owner}>
+              <rect
+                className="wallet-contact"
+                x={node.x - 58}
+                y={node.y - 22}
+                width="116"
+                height="44"
+                rx="3"
+                aria-hidden="true"
+              />
+              <foreignObject x={node.x - 55} y={node.y - 19} width="110" height="38">
+                <button
+                  data-crawl-anchor="true"
+                  className={`map-wallet ${node.flagged ? 'is-flagged' : ''} ${selected === node.owner ? 'is-selected' : ''}`}
+                  title={node.owner}
+                  aria-label={`Inspect wallet ${node.owner}${node.flagged ? ', risk evidence' : ''}`}
+                  aria-pressed={selected === node.owner}
+                  onClick={() => setSelected(selected === node.owner ? null : node.owner)}
+                >
+                  {shortAddress(node.owner)}
+                </button>
+              </foreignObject>
+            </g>
+          ))}
+        </svg>
+        <canvas ref={spiderCanvas} className="wallet-scene-spiders" aria-hidden="true" />
+      </div>
       {nodes.length > 0 && (
         <div className="map-wallet-picker">
           <label htmlFor={`${pattern}-wallet`}>Inspect an observed wallet</label>
@@ -387,7 +328,8 @@ export function RelationshipMap({
       </div>
       <p className="map-note">
         Dotted spokes locate indexed wallets around the mint; they are not wallet-to-wallet
-        evidence. Crawlers are a visual guide, not a measure of coverage.
+        evidence. Spiders and scanning pulses are visual effects, not a measure of coverage. A saved
+        report does not refresh as the scene moves.
       </p>
       {selectedNode && report && (
         <div className="selected-wallet">

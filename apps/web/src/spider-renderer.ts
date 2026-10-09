@@ -38,7 +38,7 @@ const project = (spider: Crawler, x: number, y: number): Point => ({
   y: spider.y + (x * Math.sin(spider.angle) + y * Math.cos(spider.angle)) * spider.size,
 });
 
-function palette(canvas: HTMLCanvasElement): Palette {
+export function spiderPalette(canvas: HTMLCanvasElement): Palette {
   const styles = getComputedStyle(canvas),
     sample = document.createElement('canvas');
   sample.width = sample.height = 1;
@@ -93,7 +93,7 @@ export class SpiderRenderer {
     private readonly ctx: CanvasRenderingContext2D,
     private readonly habitat: HTMLElement,
   ) {
-    this.colors = palette(canvas);
+    this.colors = spiderPalette(canvas);
     this.glow = glowSprite(this.colors.accent);
     this.resize();
   }

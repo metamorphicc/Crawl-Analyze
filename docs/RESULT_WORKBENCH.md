@@ -21,10 +21,21 @@ is not resumed.
   followed by indexed holders. Dotted mint spokes indicate indexed membership only. Direct
   interactions, inferred control and behavioral hypotheses have distinct line styles and a legend.
   Up to 80 collected edges are displayed; counts and the complete equivalent tables disclose caps.
-- Six articulated SVG crawlers at most move within this scene while the job runs. Movement is
-  decorative and does not attest that a specific wallet has completed analysis. Pause, OS reduced
-  motion, tab visibility and offscreen suspension are respected. Animation time and trails survive
-  pause/resume without advancing offscreen. It ends when the job reaches a terminal state.
+- The wallet scene reuses the exact homepage Canvas spider renderer: identical anatomy, planted
+  legs, foot glows and fading trails, rather than separate SVG models. Crawlers are section-bound.
+  Wallet buttons drift gently; spokes and evidence edges follow their actual moving endpoints.
+  Green outbound / blue returning pulses link the mint with observed indexed wallets. Packets on
+  collected evidence edges retain their semantic colors. Rotating arcs and contact flashes animate
+  the center and arrivals. These are decorative effects, never new observations or coverage claims.
+- A persistent website-wide blurred Canvas layer contains an abstract network, drifting junctions, orthogonal
+  routes, traveling packets and expanding rings. It contains no token addresses or invented data.
+  It is mounted once in the shared layout across scanner, token, report, watchlist, methodology
+  and status routes. Foreground labels, node buttons and evidence hit targets remain sharp.
+- Ambient motion continues in the saved-report map without refreshing the report. One clock and
+  shared persisted pause controls spiders, wallets, packets, arcs and the website background together. OS reduced motion,
+  tab visibility and offscreen suspension are respected; returning resumes preserved scene time,
+  spider positions and trails. The global background continues outside the map, runs at 30 fps
+  and suspends in hidden tabs; OS reduced motion leaves it static. Homepage spider boundaries remain.
 - Address selection works through node buttons or a native wallet picker. Zoom, reset and pointer
   panning are available. Selected addresses expose balance only when indexed, flags, relationship
   context and evidence/transaction actions. No inferred identity becomes proven ownership.

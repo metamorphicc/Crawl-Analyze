@@ -4,6 +4,17 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
+**Wallet-scene motion refinement after visual checkpoint `c1580ba`.**
+
+The map now shares the homepage spider renderer. Gently drifting wallets, bidirectional mint
+pulses, packets on observed evidence edges and scanning arcs animate in live and saved views.
+A persistent blurred abstract network sits behind the entire website on all routes, with moving
+junctions, packets and expanding rings, without fabricating analytics.
+All layers share persisted pause and reduced-motion handling; hidden tabs stop rendering. Motion in saved reports does
+not refresh observations. Existing homepage boundaries and the durable architecture remain.
+No tests, typecheck, browser checks or live-provider calls; frontend serving assets only.
+No server start, push or deployment. Stages 13 and 14 remain pending.
+
 **Result-screen refinement from the user's video reference.**
 
 The active product is again the durable website/bot/worker version. The cancelled ephemeral

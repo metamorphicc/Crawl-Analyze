@@ -25,6 +25,7 @@ import { date, stateLabel, phaseLabel } from './format.js';
 import { useLiveJob } from './live.js';
 import { ReportView } from './report.js';
 import { CrawlStage } from './crawl-stage.js';
+import { SiteBackground } from './site-background.js';
 import { Watchlist } from './watches.js';
 import { ScanLine, Bookmark, BookOpen, Activity, Menu, ArrowUpRight } from 'lucide-react';
 import { SpiderCanvas, SpiderEnvironment, SpiderMark, useSpiderActivity } from './spiders.js';
@@ -94,6 +95,7 @@ function Layout() {
   }, [location]);
   return (
     <SpiderEnvironment route={location}>
+      <SiteBackground />
       <a className="skip" href="#content">
         Skip to content
       </a>
