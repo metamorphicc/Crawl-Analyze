@@ -8,3 +8,5 @@ export * from './infrastructure.js';
 export * from './idl.js';
 export * from './transactions.js';
 export * from './markets.js';
+export * from './history.js';
+export * from './funding.js';

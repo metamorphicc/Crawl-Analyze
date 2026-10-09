@@ -84,6 +84,50 @@ export const evidenceSchema = z.object({
   provenance: provenanceSchema,
 });
 export type Evidence = z.infer<typeof evidenceSchema>;
+export const walletLabelSchema = z.object({
+  address: addressSchema,
+  kind: z.enum(['exchange', 'router', 'pool', 'distributor']),
+  source: z.string().min(1),
+  reviewedAt: z.iso.datetime(),
+  expiresAt: z.iso.datetime(),
+  version: z.string().min(1),
+  verified: z.boolean(),
+});
+export const relationshipEdgeSchema = evidenceSchema.extend({
+  signatures: z.array(z.string()),
+  transactionLinks: z.array(z.url()),
+  ruleVersion: z.string(),
+  confidence: z.enum(['low', 'medium', 'high']),
+  assetMint: addressSchema.nullable(),
+  supportsControlHypothesis: z.boolean(),
+  serviceExcluded: z.boolean(),
+  relatedEvidenceIds: z.array(z.string()),
+});
+export const evidenceGraphSchema = z.object({
+  ruleVersion: z.string(),
+  nodes: z.array(
+    z.object({
+      owner: addressSchema,
+      amount: rawAmountSchema,
+      label: walletLabelSchema.nullable(),
+      observedHub: z.boolean(),
+    }),
+  ),
+  edges: z.array(relationshipEdgeSchema),
+  controlHypotheses: z.array(
+    z.object({
+      id: z.string(),
+      owners: z.array(addressSchema),
+      amount: rawAmountSchema,
+      evidenceIds: z.array(z.string()),
+      confidence: z.literal('medium'),
+      identityProven: z.literal(false),
+    }),
+  ),
+  suspiciousOwners: z.array(addressSchema),
+  limitations: z.array(z.string()),
+  analyzedOwners: z.array(addressSchema),
+});
 export const jobSchema = z.object({
   id: z.uuid(),
   mint: addressSchema,
@@ -102,6 +146,7 @@ export const scanEventSchema = z.object({
   createdAt: z.iso.datetime(),
 });
 export type ScanEvent = z.infer<typeof scanEventSchema>;
+export * from './intelligence.js';
 export class PublicError extends Error {
   constructor(
     public readonly code: string,

@@ -4,7 +4,15 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
-**Stage 04: implemented and locally verified; mainnet golden corpus pending credentials.**
+**Stage 05: implemented and locally verified; live history acceptance pending credentials.**
+
+Stage 04 checkpoint: `5dcb6e4`. Stage 05 subject:
+`feat: trace wallet relationships with evidence and confidence`.
+77 unit tests, typecheck and full build pass. Bounded retained-window wallet/token-account history,
+transaction reuse, causal funding traces, >20-owner supply-based selection, targeted counterparties,
+reviewed-label/hub exclusions, transaction-linked evidence and corroborated control hypotheses are
+implemented. Shared contract graph schemas and a real-adapter developer command are available.
+See `docs/STAGE_05.md`. Unknown archive/entry data cannot imply a fresh or clean wallet.
 
 Stage 03 checkpoint: `08cae90`. Stage 04 subject:
 `feat: decode Pump trades and token flows across migrations`.
@@ -105,8 +113,8 @@ the actual container references/digests are in `docs/ENVIRONMENT.md`.
 
 ## Next task
 
-Implement **stage 05**: bounded wallet histories/funding and evidence graph, then stage 06 scoring
-and liquidity scenarios. Stop after the stage 06 local commit. Continue independently
+Implement **stage 06** scoring and liquidity scenarios, then stop after its local commit.
+Continue independently
 of the pending live gates; do not mark those gates passed without credentials and evidence.
 
 Continue directly on `main`, as explicitly requested by the human. No push.
