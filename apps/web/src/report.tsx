@@ -143,6 +143,9 @@ export function ReportView({
         <div className="report-token-identity">
           <span className="chain-badge">SOL</span>
           <div>
+            <span className="field-eyebrow">
+              {provisional ? 'WORK IN PROGRESS' : 'CRAWLSPIDER / FIELD REPORT'}
+            </span>
             <h2>{shortAddress(r.identity.mint)}</h2>
             <p>
               {provisional
@@ -183,28 +186,74 @@ export function ReportView({
       {historical && (
         <p className="report-notice">Historical reports preserve values at the time of analysis.</p>
       )}
-      <ReportMetrics report={r} />
-      <section className="market-panel">
-        <div className="panel-heading">
-          <h3>Market chart</h3>
-          <span>USD · 5-minute candles</span>
+      <nav className="report-section-index" aria-label="Report sections">
+        <a href={`#${r.id}-overview`}>
+          <span>01</span> Findings
+        </a>
+        <a href={`#${r.id}-holders`}>
+          <span>02</span> Wallets
+        </a>
+        <a
+          href={`#${r.id}-web`}
+          onClick={() => {
+            const panel = document.getElementById(`${r.id}-web`);
+            if (panel instanceof HTMLDetailsElement) panel.open = true;
+          }}
+        >
+          <span>03</span> The web
+        </a>
+        <a href="#report-checks">
+          <span>04</span> Evidence
+        </a>
+      </nav>
+      <div id={`${r.id}-overview`} className="findings-heading">
+        <div>
+          <span className="field-eyebrow">01 / THE FINDINGS</span>
+          <h3>What the crawl found.</h3>
         </div>
-        <p>
-          External USD candles are displayed separately from the report snapshot and reserve
-          calculations.
-        </p>
-        {chart ? (
-          <Suspense fallback={<p role="status">Loading chart…</p>}>
-            <PriceChart mint={r.identity.mint} />
-          </Suspense>
-        ) : (
-          <button onClick={() => setChart(true)}>Load candles</button>
-        )}
-      </section>
-      <div className="report-columns">
-        <section className="holder-panel">
+        <span>{provisional ? 'Still gathering evidence' : 'A snapshot, with the receipts.'}</span>
+      </div>
+      <ReportMetrics report={r} />
+      <div className="report-findings">
+        <section className="market-panel">
           <div className="panel-heading">
-            <h3>Holders</h3>
+            <h3>Market chart</h3>
+            <span>USD · 5-minute candles</span>
+          </div>
+          <p>
+            External USD candles are displayed separately from the report snapshot and reserve
+            calculations.
+          </p>
+          {chart ? (
+            <Suspense fallback={<p role="status">Loading chart…</p>}>
+              <PriceChart mint={r.identity.mint} />
+            </Suspense>
+          ) : (
+            <button onClick={() => setChart(true)}>Load candles</button>
+          )}
+        </section>
+        <aside className="verdict-panel" aria-label="Risk verdict">
+          <ReportOverview report={r} />
+          <div className="verdict-actions">
+            {!provisional && (
+              <button onClick={() => void share()}>
+                <Copy size={15} />
+                Copy link
+              </button>
+            )}
+            <Link to="/">
+              New scan <ArrowUpRight size={14} />
+            </Link>
+          </div>
+          {copied && <p role="status">{copied}</p>}
+        </aside>
+      </div>
+      <div className="report-columns">
+        <section id={`${r.id}-holders`} className="holder-panel">
+          <div className="panel-heading">
+            <h3>
+              <span className="panel-index">02 /</span> Wallet ledger
+            </h3>
             <span>{metrics.ownerCount} indexed owners</span>
           </div>
           <p className="panel-caption">
@@ -260,25 +309,10 @@ export function ReportView({
               }))}
           />
         </section>
-        <aside className="verdict-panel" aria-label="Risk verdict">
-          <ReportOverview report={r} />
-          <div className="verdict-actions">
-            {!provisional && (
-              <button onClick={() => void share()}>
-                <Copy size={15} />
-                Copy link
-              </button>
-            )}
-            <Link to="/">
-              New scan <ArrowUpRight size={14} />
-            </Link>
-          </div>
-          {copied && <p role="status">{copied}</p>}
-        </aside>
       </div>
-      <details className="report-disclosure">
+      <details id={`${r.id}-web`} className="report-disclosure wallet-web-disclosure">
         <summary>
-          Wallet web · {r.graph.controlHypotheses.length} control hypotheses ·{' '}
+          03 / The wallet web · {r.graph.controlHypotheses.length} control hypotheses ·{' '}
           {r.graph.edges.length} evidence edges
         </summary>
         <RelationshipMap mint={r.identity.mint} report={r} onEvidence={setEdge} />

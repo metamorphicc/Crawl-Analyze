@@ -48,12 +48,22 @@ export class NetworkBackground {
     }));
     ctx.save();
     ctx.translate(Math.sin(t * 0.11) * 10, Math.cos(t * 0.13) * 8);
-    ctx.lineWidth = 1;
+    // Large soft pools give the whole canvas depth, even between passing packets.
+    for (const [index, anchor] of [points[8]!, points[31]!].entries()) {
+      const radius = Math.max(w, h) * 0.32;
+      const glow = ctx.createRadialGradient(anchor.x, anchor.y, 0, anchor.x, anchor.y, radius);
+      glow.addColorStop(0, index ? this.colors.joint : this.colors.accent);
+      glow.addColorStop(1, 'transparent');
+      ctx.globalAlpha = 0.045 + Math.sin(t * 0.23 + index) * 0.009;
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, w, h);
+    }
+    ctx.lineWidth = 1.4;
     this.backgroundEdges.forEach(([a, b], i) => {
       const start = points[a]!,
         end = points[b]!;
       ctx.strokeStyle = i % 4 ? this.colors.thread : this.colors.accent;
-      ctx.globalAlpha = 0.35;
+      ctx.globalAlpha = 0.48;
       ctx.beginPath();
       ctx.moveTo(start.x, start.y);
       const mid = (start.x + end.x) / 2;
@@ -72,13 +82,16 @@ export class NetworkBackground {
               : { x: mid + (end.x - mid) * (fraction - 0.75) * 4, y: end.y };
         ctx.globalAlpha = 1;
         ctx.fillStyle = i % 4 ? this.colors.joint : this.colors.accent;
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = 9;
         ctx.beginPath();
         ctx.arc(travel.x, travel.y, 3.5, 0, Math.PI * 2);
         ctx.fill();
+        ctx.shadowBlur = 0;
       }
     });
     points.forEach((point, i) => {
-      ctx.globalAlpha = 0.6;
+      ctx.globalAlpha = 0.65 + Math.sin(t * 1.3 + i) * 0.2;
       ctx.strokeStyle = this.colors.thread;
       ctx.fillStyle = this.colors.fill;
       if (i % 6 === 0) {
@@ -90,7 +103,7 @@ export class NetworkBackground {
       ctx.stroke();
     });
     for (const [index, hub] of [points[18]!, points[29]!].entries()) {
-      ctx.globalAlpha = 0.2;
+      ctx.globalAlpha = 0.38;
       ctx.strokeStyle = this.colors.accent;
       ctx.beginPath();
       ctx.arc(hub.x, hub.y, 32 + ((t * 11 + index * 20) % 42), 0, Math.PI * 2);

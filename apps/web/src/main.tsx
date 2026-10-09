@@ -26,6 +26,7 @@ import { useLiveJob } from './live.js';
 import { ReportView } from './report.js';
 import { CrawlStage } from './crawl-stage.js';
 import { SiteBackground } from './site-background.js';
+import { ReportArrival } from './report-arrival.js';
 import { Watchlist } from './watches.js';
 import { ScanLine, Bookmark, BookOpen, Activity, Menu, ArrowUpRight } from 'lucide-react';
 import { SpiderCanvas, SpiderEnvironment, SpiderMark, useSpiderActivity } from './spiders.js';
@@ -35,6 +36,7 @@ import '@fontsource/space-grotesk/600.css';
 import '@fontsource/ibm-plex-mono/400.css';
 import './base.css';
 import './workbench.css';
+import './identity.css';
 const root = createRootRoute({
   component: Layout,
   notFoundComponent: () => (
@@ -105,6 +107,7 @@ function Layout() {
             <SpiderMark />
             CrawlSpider
           </Link>
+          <span className="brand-descriptor">Solana field intelligence</span>
           <details className="site-menu" key={location}>
             <summary aria-label="Open navigation menu">
               <Menu size={18} aria-hidden="true" />
@@ -244,33 +247,61 @@ function Home() {
     <>
       <section className="scanner-hero">
         <SpiderCanvas />
-        <div className="hero-network" data-crawl-anchor>
-          <span className="network-dot" />
-          Solana token intelligence · pump.fun
+        <div className="hero-copy">
+          <div className="hero-network" data-crawl-anchor>
+            <span className="network-dot" /> Solana / Read-only intelligence
+          </div>
+          <p className="field-eyebrow">THE CRAWLSPIDER FIELD JOURNAL</p>
+          <h1 className="hero-title">
+            <span className="hero-line">Every wallet</span>{' '}
+            <span className="hero-line">
+              leaves a <span className="thread-word">thread.</span>
+            </span>
+          </h1>
+          <p className="hero-description">
+            Pull one. See who holds the supply, where the money came from, and which wallets keep
+            crossing paths.
+          </p>
+          <div className="hero-trace-key" aria-label="Analysis areas">
+            <span>01 / Distribution</span>
+            <span>02 / History</span>
+            <span>03 / Connections</span>
+          </div>
+          <a className="hero-journal-link" href="#recent-crawls">
+            Explore the field journal <ArrowUpRight size={14} aria-hidden="true" />
+          </a>
         </div>
-        <h1 className="hero-title">
-          <span className="hero-line">Follow the wallets.</span>{' '}
-          <span className="hero-line accent-line">Trace the connections.</span>
-        </h1>
-        <p className="hero-description">
-          Holder distribution, wallet history and on-chain relationships. Open the evidence behind
-          every finding.
-        </p>
-        <div className="hero-scanner">
+        <div className="hero-scanner" data-crawl-anchor>
+          <div className="scanner-heading">
+            <span className="field-eyebrow">START AN INVESTIGATION</span>
+            <ScanLine size={22} aria-hidden="true" />
+          </div>
+          <h2>Pick up the thread.</h2>
+          <p className="scanner-intro">One token. Its wallets, history and evidence.</p>
           <Scanner />
+          <div className="scanner-footnote">
+            <span>pump.fun</span>
+            <span>Axiom</span>
+            <span>GMGN</span>
+            <span>Solana mint</span>
+          </div>
           <details className="supported-links">
-            <summary>Supported links</summary>
+            <summary>Supported link formats</summary>
             <p>
               pump.fun/coin/… · gmgn.ai/sol/token/… · axiom.trade/meme/…?chain=sol or a mint
               address. For unsupported pools, use the mint.
             </p>
           </details>
         </div>
+        <div className="hero-baseline">
+          <span>FOLLOW THE EVIDENCE</span>
+          <span>Interactions are observable. Identity remains a hypothesis.</span>
+        </div>
       </section>
       <div className="home-feed-grid">
-        <section className="recent-reports" data-crawl-anchor>
+        <section id="recent-crawls" className="recent-reports" data-crawl-anchor>
           <div className="feed-heading">
-            <h2>Recently crawled</h2>
+            <h2>Field journal</h2>
             <span>Open a saved report</span>
           </div>
           {recent.isPending && <p role="status">Loading…</p>}
@@ -311,7 +342,7 @@ function Home() {
       <section className="crawl-explainer">
         <div className="explainer-heading">
           <SpiderMark size={28} />
-          <h2>Inside the crawl</h2>
+          <h2>Four passes. One trail.</h2>
         </div>
         <ol className="crawl-steps">
           <li>
@@ -462,7 +493,18 @@ function Live({ id, mint }: { id: string; mint: string }) {
       </CrawlStage>
       {cancelError && <p role="alert">{cancelError}</p>}
       {report && (
-        <ReportView key={report.id} report={report} provisional={report.id !== job?.reportId} />
+        <ReportArrival
+          reportId={report.id}
+          ready={Boolean(
+            job &&
+            ['complete', 'partial'].includes(job.state) &&
+            job.reportId === report.id &&
+            report.jobId === id &&
+            report.identity.mint === mint,
+          )}
+        >
+          <ReportView key={report.id} report={report} provisional={report.id !== job?.reportId} />
+        </ReportArrival>
       )}
     </>
   );

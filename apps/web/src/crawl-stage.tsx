@@ -71,6 +71,11 @@ export function CrawlStage({
                   : 'Analysis stopped'}
           </span>
         </div>
+        {completed && report?.id === job?.reportId && (
+          <a className="scan-result-link" href="#scan-results">
+            Open findings ↓
+          </a>
+        )}
         {seconds !== null && (
           <time title="Elapsed time since this request, including the queue">
             {Math.floor(seconds / 60)

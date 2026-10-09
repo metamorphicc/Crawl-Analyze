@@ -4,6 +4,17 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
+**Original field-journal UI and final-report arrival after checkpoint `be480fb`.**
+
+Home uses an asymmetric investigation desk, original headline and an independent scanner block.
+Reports lead with indexed findings, a market/risk pair and a full-width wallet ledger. The matching
+final scan report scrolls into view and receives focus once, including partial reports with a saved
+result. Previews and repeated updates do not jump. Motion respects pause and reduced-motion settings.
+The global network moves to a positive layer below content, with stronger paths, packets and a soft
+static atmosphere so it is visibly present across the site. See `docs/FIELD_JOURNAL_UI.md`.
+No tests, typecheck, browser checks or live-provider requests at the user's direction. Only local
+frontend assets are generated; no server start, push or deployment. Stages 13 and 14 remain pending.
+
 **Wallet-scene motion refinement after visual checkpoint `c1580ba`.**
 
 The map now shares the homepage spider renderer. Gently drifting wallets, bidirectional mint

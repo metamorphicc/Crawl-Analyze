@@ -53,6 +53,9 @@ export function ReportOverview({ report: r }: { report: AnalysisReport }) {
         {score ?? '?'}
         <span>/100</span>
       </div>
+      <div className="risk-spectrum" aria-hidden="true">
+        <span style={{ width: `${score ?? 0}%` }} />
+      </div>
       <strong className="verdict-label">
         {score === null ? 'Insufficient data' : `${r.risk.classification} risk`}
       </strong>
@@ -78,30 +81,33 @@ export function ReportOverview({ report: r }: { report: AnalysisReport }) {
       <a className="terminal-action" href={r.links.axiom} target="_blank" rel="noopener noreferrer">
         Open in Axiom <ArrowUpRight size={16} />
       </a>
-      <div className="rule-breakdown">
-        <h3>What contributed</h3>
-        {r.risk.rules.map((rule) => (
-          <div className={`rule-meter rule-${rule.status}`} key={rule.id}>
-            <div>
-              <span>{rule.id.replaceAll('_', ' ').replaceAll('-', ' ')}</span>
-              <strong>{rule.status === 'unknown' ? '?' : `+${rule.points}`}</strong>
+      <details className="contribution-details">
+        <summary>Inspect score contributions</summary>
+        <div className="rule-breakdown">
+          <h3>What contributed</h3>
+          {r.risk.rules.map((rule) => (
+            <div className={`rule-meter rule-${rule.status}`} key={rule.id}>
+              <div>
+                <span>{rule.id.replaceAll('_', ' ').replaceAll('-', ' ')}</span>
+                <strong>{rule.status === 'unknown' ? '?' : `+${rule.points}`}</strong>
+              </div>
+              <meter
+                min={0}
+                max={100}
+                value={rule.status === 'triggered' ? rule.points : 0}
+                aria-label={`${rule.id}: ${rule.status}; ${rule.points} points`}
+              />
+              <small>
+                {rule.status === 'unknown'
+                  ? 'Unknown - data missing'
+                  : rule.status === 'triggered'
+                    ? 'Evidence matched'
+                    : 'Not triggered'}
+              </small>
             </div>
-            <meter
-              min={0}
-              max={100}
-              value={rule.status === 'triggered' ? rule.points : 0}
-              aria-label={`${rule.id}: ${rule.status}; ${rule.points} points`}
-            />
-            <small>
-              {rule.status === 'unknown'
-                ? 'Unknown - data missing'
-                : rule.status === 'triggered'
-                  ? 'Evidence matched'
-                  : 'Not triggered'}
-            </small>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </details>
       {score === null && (
         <details>
           <summary>Why no verdict?</summary>

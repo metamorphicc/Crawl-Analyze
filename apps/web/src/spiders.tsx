@@ -69,36 +69,38 @@ export function SpiderEnvironment({ children, route }: { children: ReactNode; ro
         toggleMotion,
       }}
     >
-      {children}
-      <div className="crawler-control">
-        <span className="crawler-mode">
-          {activity
-            ? `${stateLabel[activity.state] || activity.state} · ${phaseLabel[activity.phase] || activity.phase}`
-            : route === '/'
-              ? 'Ambient crawlers'
-              : 'Ambient network'}
-        </span>
-        <button
-          className="motion-toggle"
-          type="button"
-          disabled={reduced}
-          aria-pressed={paused || reduced}
-          aria-label={
-            reduced
-              ? 'Scene motion disabled by system preference'
-              : paused
-                ? 'Resume scene motion'
-                : 'Pause scene motion'
-          }
-          onClick={toggleMotion}
-        >
-          {paused || reduced ? (
-            <Play size={14} aria-hidden="true" />
-          ) : (
-            <Pause size={14} aria-hidden="true" />
-          )}
-          <span>{reduced ? 'Reduced motion' : paused ? 'Resume' : 'Pause'}</span>
-        </button>
+      <div className="site-shell" data-motion={paused || reduced ? 'paused' : 'running'}>
+        {children}
+        <div className="crawler-control">
+          <span className="crawler-mode">
+            {activity
+              ? `${stateLabel[activity.state] || activity.state} · ${phaseLabel[activity.phase] || activity.phase}`
+              : route === '/'
+                ? 'Ambient crawlers'
+                : 'Ambient network'}
+          </span>
+          <button
+            className="motion-toggle"
+            type="button"
+            disabled={reduced}
+            aria-pressed={paused || reduced}
+            aria-label={
+              reduced
+                ? 'Scene motion disabled by system preference'
+                : paused
+                  ? 'Resume scene motion'
+                  : 'Pause scene motion'
+            }
+            onClick={toggleMotion}
+          >
+            {paused || reduced ? (
+              <Play size={14} aria-hidden="true" />
+            ) : (
+              <Pause size={14} aria-hidden="true" />
+            )}
+            <span>{reduced ? 'Reduced motion' : paused ? 'Resume' : 'Pause'}</span>
+          </button>
+        </div>
       </div>
     </SpiderContext.Provider>
   );
