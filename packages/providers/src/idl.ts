@@ -158,6 +158,7 @@ export type DecodedIdl = {
   value: Record<string, unknown>;
   missingFields: string[];
   trailingBytes: number;
+  trailingNonzero: boolean;
   accountNames: string[];
 };
 export function decodeIdl(
@@ -183,6 +184,7 @@ export function decodeIdl(
     name: entry.name,
     ...decoded,
     trailingBytes: bytes.length - reader.offset,
+    trailingNonzero: bytes.subarray(reader.offset).some((v) => v !== 0),
     accountNames: (entry.accounts || []).flatMap((a) =>
       a.accounts ? a.accounts.map((v) => v.name) : [a.name],
     ),

@@ -4,7 +4,17 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
-**Stage 05: implemented and locally verified; live history acceptance pending credentials.**
+**Stage 06: implemented and locally verified; live acceptance pending credentials. Work stopped at the user's requested boundary.**
+
+Stage 04 checkpoint: `5dcb6e4`. Stage 05 checkpoint: `cf15592`. Stage 06 subject:
+`feat: compute versioned distribution risk and sell scenarios`.
+117 unit tests, 3 real PostgreSQL/Redis integration tests, strict typecheck and full build pass.
+Shared validated risk/scenario contracts, explicit eligibility and data-completeness confidence,
+unique flagged supply, exact Pump curve/PumpSwap sells, quote-specific current fees, signed reserve
+and fee-bucket handling, real-output checks, freshness, independent multi-venue alternatives and
+inspection artifacts are implemented. See `docs/STAGE_06.md` for rules, formulas and references.
+Publisher reference fixtures are attributed historical captures; live mainnet verification is pending.
+No production/user-journey or predictive-accuracy acceptance is claimed. Stage 07 has not begun.
 
 Stage 04 checkpoint: `5dcb6e4`. Stage 05 subject:
 `feat: trace wallet relationships with evidence and confidence`.
@@ -113,9 +123,9 @@ the actual container references/digests are in `docs/ENVIRONMENT.md`.
 
 ## Next task
 
-Implement **stage 06** scoring and liquidity scenarios, then stop after its local commit.
-Continue independently
-of the pending live gates; do not mark those gates passed without credentials and evidence.
+**Stopped after stage 06 as requested.** On a later explicit continuation, stage 07 adds durable
+scan orchestration and the public report API. Live gates remain pending; do not mark them passed
+without credentials and evidence.
 
 Continue directly on `main`, as explicitly requested by the human. No push.
 Website styling and spider animation wait for the user's `design.md` / `desigh.md`.

@@ -78,7 +78,7 @@ export async function loadPumpCurve(
   const quoteIdentity = quoteAccount ? decodeMintIdentity(quoteMint, quoteAccount) : null;
   const limitations: string[] = [];
   if (state.missingFields.length) limitations.push('LEGACY_CURVE_LAYOUT');
-  if (state.trailingBytes) limitations.push('CURVE_LAYOUT_TRAILING_BYTES');
+  if (state.trailingNonzero) limitations.push('CURVE_LAYOUT_TRAILING_BYTES');
   if (state.value.is_mayhem_mode === true) limitations.push('MAYHEM_SCENARIO_UNVERIFIED');
   if (BigInt(text(state.value.depth) || '0') > 0n)
     limitations.push('MULTIHOP_CURVE_SCENARIO_UNVERIFIED');
@@ -165,6 +165,7 @@ export async function loadPumpPool(
     quote = getTokenDecoder().decode(quoteAccount.data.subarray(0, 165));
   if (base.mint !== mint || quote.mint !== quoteMint || base.owner !== pool || quote.owner !== pool)
     return null;
+  if (base.state === 0 || quote.state === 0) return null;
   const quoteIdentity = quoteMintAccount ? decodeMintIdentity(quoteMint, quoteMintAccount) : null;
   const canonicalCreator = await pda(PUMP_PROGRAM, [seed('pool-authority'), key(mint)]);
   const global =
@@ -176,8 +177,9 @@ export async function loadPumpPool(
       ? decodeIdl(FEE_PROGRAM, 'account', feeAccount.data, true)
       : null;
   const limitations: string[] = [];
+  if (base.state === 2 || quote.state === 2) limitations.push('POOL_VAULT_FROZEN');
   if (current.missingFields.length) limitations.push('LEGACY_POOL_LAYOUT');
-  if (current.trailingBytes) limitations.push('POOL_LAYOUT_TRAILING_BYTES');
+  if (current.trailingNonzero) limitations.push('POOL_LAYOUT_TRAILING_BYTES');
   if (quoteIdentity?.token2022Extensions.length || baseAccount.data.length > 165)
     limitations.push('TOKEN_2022_POOL_SEMANTICS_UNVERIFIED');
   return {

@@ -146,6 +146,132 @@ export const scanEventSchema = z.object({
   createdAt: z.iso.datetime(),
 });
 export type ScanEvent = z.infer<typeof scanEventSchema>;
+export const riskRuleSchema = z.object({
+  id: z.string(),
+  status: z.enum(['triggered', 'not-triggered', 'unknown']),
+  points: z.number().int().min(0).max(100),
+  threshold: z.string(),
+  observed: z.string().nullable(),
+  evidenceIds: z.array(z.string()),
+});
+const bpsSchema = z.number().int().min(0).max(10000);
+export const riskAssessmentSchema = z
+  .object({
+    ruleVersion: z.string(),
+    heuristic: z.literal(true),
+    calibrated: z.literal(false),
+    observedAt: z.iso.datetime(),
+    eligible: z.boolean(),
+    eligibilityReasons: z.array(z.string()),
+    riskScore: z.number().int().min(0).max(100).nullable(),
+    observedRiskPoints: z.number().int().min(0).max(100),
+    classification: z.enum(['low', 'moderate', 'high', 'insufficient-data']),
+    confidence: z.object({
+      dataCompleteness: z.number().int().min(0).max(100),
+      meaning: z.literal('coverage-not-predictive-accuracy'),
+      reasons: z.array(z.string()),
+    }),
+    metrics: z.object({
+      denominator: z.literal('indexed-balance-excluding-verified-infrastructure'),
+      eligibleBalance: rawAmountSchema,
+      excludedBalance: rawAmountSchema,
+      ownerCount: z.number().int().nonnegative(),
+      top1Bps: bpsSchema,
+      top10Bps: bpsSchema,
+      largestHypothesisBps: bpsSchema,
+      flaggedBalance: rawAmountSchema,
+      flaggedBps: bpsSchema,
+      flaggedOwners: z.array(addressSchema),
+      usableHistoryBps: bpsSchema,
+      knownEntryBps: bpsSchema,
+      knownEarlyEntryBps: bpsSchema,
+    }),
+    rules: z.array(riskRuleSchema),
+  })
+  .superRefine((value, ctx) => {
+    if (
+      value.eligible !== (value.riskScore !== null) ||
+      (value.eligible &&
+        (value.classification === 'insufficient-data' ||
+          value.eligibilityReasons.length > 0 ||
+          value.riskScore !== value.observedRiskPoints)) ||
+      (!value.eligible &&
+        (value.classification !== 'insufficient-data' || value.eligibilityReasons.length === 0))
+    )
+      ctx.addIssue({ code: 'custom', message: 'Risk eligibility and verdict disagree' });
+    if (
+      rawAmountSchema.safeParse(value.metrics.flaggedBalance).success &&
+      rawAmountSchema.safeParse(value.metrics.eligibleBalance).success &&
+      BigInt(value.metrics.flaggedBalance) > BigInt(value.metrics.eligibleBalance)
+    )
+      ctx.addIssue({ code: 'custom', message: 'Flagged supply exceeds eligible balance' });
+  });
+export type RiskAssessment = z.infer<typeof riskAssessmentSchema>;
+const feeRatesSchema = z.object({
+  lpBps: bpsSchema,
+  protocolBps: bpsSchema,
+  creatorBps: bpsSchema,
+  schedule: z.enum(['sol-tier', 'stable-tier', 'exotic-flat', 'flat']),
+  marketCapQuoteRaw: rawAmountSchema,
+  thresholdQuoteRaw: rawAmountSchema.nullable(),
+});
+const quoteBaseSchema = z.object({
+  modelVersion: z.string(),
+  market: addressSchema,
+  venue: z.enum(['pump-curve', 'pump-swap']),
+  quoteMint: addressSchema,
+  slot: rawAmountSchema,
+  observedAt: z.iso.datetime(),
+  baseIn: rawAmountSchema,
+});
+export const sellQuoteSchema = z.discriminatedUnion('status', [
+  quoteBaseSchema.extend({ status: z.literal('unavailable'), reasons: z.array(z.string()).min(1) }),
+  quoteBaseSchema.extend({
+    status: z.literal('available'),
+    grossQuoteOut: rawAmountSchema,
+    netQuoteOut: rawAmountSchema,
+    minQuoteOut: rawAmountSchema,
+    slippageBps: bpsSchema,
+    quoteUnits: z.string().nullable(),
+    effectiveQuoteReserve: rawAmountSchema,
+    realQuoteAvailable: rawAmountSchema,
+    fees: z.object({
+      lp: rawAmountSchema,
+      protocol: rawAmountSchema,
+      creator: rawAmountSchema,
+      rates: feeRatesSchema,
+    }),
+    executionImpactBps: z.string(),
+    postSpotDropBps: z.string(),
+    assumptions: z.array(z.string()),
+  }),
+]);
+export type SellQuote = z.infer<typeof sellQuoteSchema>;
+export const liquidityScenariosSchema = z.object({
+  modelVersion: z.string(),
+  baseMint: addressSchema,
+  basis: z.literal('flagged-owner-balance'),
+  basisAmount: rawAmountSchema,
+  observedAt: z.iso.datetime(),
+  limitations: z.array(z.string()),
+  scenarios: z.array(
+    z.object({
+      fractionBps: bpsSchema,
+      baseIn: rawAmountSchema,
+      quotes: z.array(sellQuoteSchema),
+      routes: z.array(
+        z.object({
+          quoteMint: addressSchema,
+          kind: z.enum(['best-single-known', 'equal-split-known']),
+          legs: z.array(sellQuoteSchema),
+          netQuoteOut: rawAmountSchema,
+          referenceBound: z.literal('achievable-in-model-not-global-optimum'),
+        }),
+      ),
+    }),
+  ),
+});
+export type LiquidityScenarios = z.infer<typeof liquidityScenariosSchema>;
 export * from './intelligence.js';
 export class PublicError extends Error {
   constructor(

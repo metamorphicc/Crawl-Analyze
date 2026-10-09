@@ -35,6 +35,7 @@ describe('PumpSwap market verification', () => {
       executable: false,
       data: [Buffer.from(bytes).toString('base64'), 'base64'],
     });
+    let vaultState = 1;
     const token = (mint: string, amount: bigint) =>
       new Uint8Array(
         getTokenEncoder().encode({
@@ -42,7 +43,7 @@ describe('PumpSwap market verification', () => {
           owner: pool,
           amount,
           delegate: none(),
-          state: 1,
+          state: vaultState,
           isNative: none(),
           delegatedAmount: 0n,
           closeAuthority: none(),
@@ -79,6 +80,13 @@ describe('PumpSwap market verification', () => {
     expect(market?.quoteVaultBalance).toBe('100');
     expect(market?.baseReserve).toBe('1000');
     expect(market?.slot).toBe('20');
+    vaultState = 2;
+    expect((await loadPumpPool(pool, mint, rpc, AbortSignal.timeout(1000)))?.limitations).toContain(
+      'POOL_VAULT_FROZEN',
+    );
+    vaultState = 0;
+    expect(await loadPumpPool(pool, mint, rpc, AbortSignal.timeout(1000))).toBeNull();
+    vaultState = 1;
     data.set(encoder.encode(key(22)), 43);
     expect(await loadPumpPool(pool, mint, rpc, AbortSignal.timeout(1000))).toBeNull();
   });

@@ -2,7 +2,12 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { loadConfig } from '@crawlspider/config';
 import { createStorage, sharedProviderBudget } from '@crawlspider/storage';
-import { evidenceGraphSchema, type WalletLabel } from '@crawlspider/contracts';
+import {
+  evidenceGraphSchema,
+  riskAssessmentSchema,
+  liquidityScenariosSchema,
+  type WalletLabel,
+} from '@crawlspider/contracts';
 import {
   RpcClient,
   resolveInput,
@@ -13,6 +18,7 @@ import {
   collectWalletHistories,
   readWalletHistory,
   traceFunding,
+  discoverMarkets,
 } from '@crawlspider/providers';
 import {
   selectHistoryCandidates,
@@ -20,6 +26,9 @@ import {
   summarizeWallet,
   eligibleAmount,
   buildEvidenceGraph,
+  assessRisk,
+  buildSellScenarios,
+  quoteSell,
 } from '@crawlspider/analysis';
 const config = loadConfig(),
   input = process.argv[2];
@@ -85,6 +94,10 @@ if (!input || !config.HELIUS_API_KEY || (!config.SOLANA_RPC_URL && !config.HELIU
         ),
       signal,
     );
+    const marketResult = await discoverMarkets(holderResult.identity, rpc, signal, [
+      ...(resolved.pool ? [resolved.pool] : []),
+      ...infrastructure.evidence.filter((e) => e.kind === 'pump-swap-vault').map((e) => e.owner),
+    ]);
     const observedAt = new Date().toISOString();
     const labels: WalletLabel[] = infrastructure.evidence.map((e) => ({
       address: e.owner,
@@ -106,6 +119,41 @@ if (!input || !config.HELIUS_API_KEY || (!config.SOLANA_RPC_URL && !config.HELIU
         observedAt,
       }),
     );
+    const quoteOptions = {
+      observedAt,
+      ...(holderResult.snapshot.quality.maxSlot
+        ? { referenceSlot: holderResult.snapshot.quality.maxSlot }
+        : {}),
+    };
+    // Probe a small nonzero fraction only to establish model availability, never as a liquidity guarantee.
+    const probe = (BigInt(holderResult.identity.supply) / 1000000n || 1n).toString();
+    const supportedMarket = marketResult.markets.some(
+      (m) => quoteSell(m, holderResult.identity, probe, quoteOptions).status === 'available',
+    );
+    const risk = riskAssessmentSchema.parse(
+      assessRisk({
+        identity: holderResult.identity,
+        holders,
+        quality: holderResult.snapshot.quality,
+        enumerationComplete: holderResult.snapshot.enumerationComplete,
+        signals,
+        graph,
+        observedAt,
+        supportedMarket,
+      }),
+    );
+    const scenarios = liquidityScenariosSchema.parse(
+      buildSellScenarios(holderResult.identity, marketResult.markets, risk.metrics.flaggedBalance, {
+        ...quoteOptions,
+        limitations: [
+          ...marketResult.limitations,
+          ...(holderResult.snapshot.quality.status !== 'complete'
+            ? ['SCENARIO_BASIS_FROM_PARTIAL_HOLDER_SNAPSHOT']
+            : []),
+          'FLAGGED_BALANCE_IS_A_HEURISTIC_SELECTION_NOT_PROVEN_COORDINATED_SALE',
+        ],
+      }),
+    );
     const artifact = {
       identity: holderResult.identity,
       links: resolved.links,
@@ -120,6 +168,9 @@ if (!input || !config.HELIUS_API_KEY || (!config.SOLANA_RPC_URL && !config.HELIU
       signals,
       funding,
       graph,
+      markets: marketResult,
+      risk,
+      scenarios,
       observedAt,
     };
     const dir = resolve('.local/evidence');
@@ -135,6 +186,9 @@ if (!input || !config.HELIUS_API_KEY || (!config.SOLANA_RPC_URL && !config.HELIU
         edges: graph.edges.length,
         controlHypotheses: graph.controlHypotheses.length,
         quality: holderResult.snapshot.quality.status,
+        riskScore: risk.riskScore,
+        confidence: risk.confidence.dataCompleteness,
+        supportedMarket,
         limitations: graph.limitations,
       }),
     );

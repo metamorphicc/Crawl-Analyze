@@ -4,6 +4,7 @@ export type DecodedFields = {
   value: Record<string, unknown>;
   missingFields: string[];
   trailingBytes: number;
+  trailingNonzero?: boolean;
   accountNames: string[];
 };
 export type ChainTransaction = {
