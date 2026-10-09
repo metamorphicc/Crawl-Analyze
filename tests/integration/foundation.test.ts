@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import pg from 'pg';
 import { loadConfig } from '@crawlspider/config';
-import { createStorage } from '@crawlspider/storage';
+import { createStorage, SCHEMA_VERSION } from '@crawlspider/storage';
 import { migrate } from '../../packages/storage/src/migrate.js';
 import { createApp } from '../../apps/api/src/app.js';
 describe('real infrastructure', () => {
@@ -34,7 +34,9 @@ describe('real infrastructure', () => {
         "INSERT INTO scan_jobs(id,mint,mode,state,dedupe_key) VALUES($1,'mint','preview','queued','same')",
         [randomUUID()],
       );
-      expect((await pool.query('SELECT count(*) FROM schema_migrations')).rows[0].count).toBe('1');
+      expect((await pool.query('SELECT count(*) FROM schema_migrations')).rows[0].count).toBe(
+        String(SCHEMA_VERSION),
+      );
     } finally {
       await pool.end();
       await admin.query(`DROP SCHEMA ${schema} CASCADE`);

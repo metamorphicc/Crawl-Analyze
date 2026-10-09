@@ -1,0 +1,10 @@
+ALTER TABLE scan_jobs ADD COLUMN lane text NOT NULL DEFAULT 'deep' CHECK(lane IN ('preview','deep','monitor'));
+ALTER TABLE scan_jobs ADD COLUMN lease_token uuid, ADD COLUMN lease_until timestamptz, ADD COLUMN cancel_hash text;
+ALTER TABLE scan_jobs ADD COLUMN phase text NOT NULL DEFAULT 'queued', ADD COLUMN preview jsonb;
+ALTER TABLE scan_jobs ADD COLUMN next_attempt_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE reports ADD COLUMN quality_rank integer NOT NULL DEFAULT 0;
+ALTER TABLE reports ADD COLUMN observed_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE reports ADD COLUMN mode text NOT NULL DEFAULT 'deep';
+CREATE TABLE scan_admission (bucket text NOT NULL, interval_key text NOT NULL, requests integer NOT NULL, expires_at timestamptz NOT NULL, PRIMARY KEY(bucket,interval_key));
+CREATE INDEX scan_admission_expiry ON scan_admission(expires_at);
+CREATE INDEX scan_jobs_lease ON scan_jobs(state,lease_until);

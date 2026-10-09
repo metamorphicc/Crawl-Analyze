@@ -2,6 +2,7 @@ import { loadConfig, installShutdown } from '@crawlspider/config';
 import { createStorage } from '@crawlspider/storage';
 import pino from 'pino';
 import { loggerOptions } from '@crawlspider/config';
+import { startRunner } from './runner.js';
 const config = loadConfig();
 const log = pino(loggerOptions(config));
 const storage = createStorage(config);
@@ -11,10 +12,10 @@ if (!Object.values(dependencies).every(Boolean)) {
   await storage.close();
   process.exitCode = 1;
 } else {
-  log.info('Worker infrastructure ready; scan processor is not installed yet');
-  const heartbeat = setInterval(() => {}, 30000);
+  const runner = startRunner(config, storage);
+  log.info('Durable scan worker ready');
   installShutdown(async () => {
-    clearInterval(heartbeat);
+    await runner.close();
     await storage.close();
   });
 }

@@ -272,6 +272,146 @@ export const liquidityScenariosSchema = z.object({
   ),
 });
 export type LiquidityScenarios = z.infer<typeof liquidityScenariosSchema>;
+export const ownerBalanceSchema = z.object({
+  owner: addressSchema,
+  amount: rawAmountSchema,
+  accounts: z.array(addressSchema),
+  frozenAmount: rawAmountSchema.nullable(),
+  delegatedAmount: rawAmountSchema.nullable(),
+  excludedAmount: rawAmountSchema,
+});
+export const historyCoverageSchema = z.object({
+  status: z.enum(['complete', 'partial', 'unavailable']),
+  scope: z.literal('provider-retained-window'),
+  addressesRequested: z.number().int().nonnegative(),
+  addressesRead: z.number().int().nonnegative(),
+  signatures: z.number().int().nonnegative(),
+  decoded: z.number().int().nonnegative(),
+  failed: z.number().int().nonnegative(),
+  missing: z.number().int().nonnegative(),
+  oldestSlot: rawAmountSchema.nullable(),
+  newestSlot: rawAmountSchema.nullable(),
+  exhausted: z.boolean(),
+  reasons: z.array(z.string()),
+});
+export const entrySchema = z.object({
+  signature: z.string(),
+  slot: rawAmountSchema,
+  kind: z.enum(['buy', 'transfer', 'mint']),
+  amount: rawAmountSchema.nullable(),
+});
+export const walletSignalsSchema = z.object({
+  owner: addressSchema,
+  entry: entrySchema.nullable(),
+  priorTrading: z.enum(['observed', 'none-observed-in-window', 'unknown']),
+  priorTradeCount: z.number().int().nonnegative().nullable(),
+  shortObservedHistory: z.boolean().nullable(),
+  earlyObservedEntry: z.boolean().nullable(),
+  freshWallet: z.null(),
+  coverage: historyCoverageSchema,
+  reasons: z.array(z.string()),
+});
+const decodedSchema = z.object({
+  name: z.string(),
+  value: z.record(z.string(), z.unknown()),
+  missingFields: z.array(z.string()),
+  trailingBytes: z.number().int().nonnegative(),
+  trailingNonzero: z.boolean().optional(),
+  accountNames: z.array(z.string()),
+});
+export const transactionSchema = z.object({
+  signature: z.string(),
+  slot: rawAmountSchema,
+  blockTime: rawAmountSchema.nullable(),
+  failed: z.boolean(),
+  parserVersion: z.string(),
+  limitations: z.array(z.string()),
+  flows: z.array(
+    z.object({
+      kind: z.enum(['transfer', 'mint', 'burn']),
+      mint: addressSchema,
+      sourceAccount: addressSchema.nullable(),
+      destinationAccount: addressSchema.nullable(),
+      from: addressSchema.nullable(),
+      to: addressSchema.nullable(),
+      amount: rawAmountSchema,
+      instruction: z.string(),
+      provenance: provenanceSchema,
+    }),
+  ),
+  nativeFlows: z.array(
+    z.object({
+      from: addressSchema,
+      to: addressSchema,
+      lamports: rawAmountSchema,
+      instruction: z.string(),
+    }),
+  ),
+  ownerDeltas: z.array(
+    z.object({
+      owner: addressSchema,
+      mint: addressSchema,
+      delta: z.string().regex(/^-?(0|[1-9]\d*)$/),
+    }),
+  ),
+  calls: z.array(
+    z.object({
+      program: addressSchema,
+      instruction: z.string(),
+      accounts: z.record(z.string(), addressSchema),
+      args: z.record(z.string(), z.unknown()),
+      missingFields: z.array(z.string()),
+      index: z.string(),
+    }),
+  ),
+  events: z.array(z.object({ program: addressSchema, decoded: decodedSchema })),
+});
+export const reportSchema = z.object({
+  id: z.uuid(),
+  jobId: z.uuid(),
+  contractVersion: z.literal(CONTRACT_VERSION),
+  analysisVersion: z.literal(ANALYSIS_VERSION),
+  parserVersion: z.literal(PARSER_VERSION),
+  mode: z.enum(['preview', 'deep']),
+  observedAt: z.iso.datetime(),
+  identity: mintIdentitySchema,
+  links: terminalLinksSchema,
+  snapshot: z.object({
+    holders: z.array(ownerBalanceSchema),
+    enumerationComplete: z.boolean(),
+    quality: qualitySchema,
+  }),
+  graph: evidenceGraphSchema,
+  risk: riskAssessmentSchema,
+  scenarios: liquidityScenariosSchema,
+  signals: z.array(walletSignalsSchema),
+  transactions: z.array(transactionSchema),
+  limitations: z.array(z.string()),
+});
+export type AnalysisReport = z.infer<typeof reportSchema>;
+export const scanAcceptanceSchema = z.object({
+  job: jobSchema,
+  reused: z.boolean(),
+  report: reportSchema.nullable(),
+  cancelToken: z.string().nullable(),
+});
+export type ScanAcceptance = z.infer<typeof scanAcceptanceSchema>;
+export const jobDetailsSchema = jobSchema.extend({
+  phase: z.string(),
+  attempt: z.number().int().nonnegative(),
+  deadlineAt: z.iso.datetime().nullable(),
+  preview: reportSchema.nullable(),
+});
+export type JobDetails = z.infer<typeof jobDetailsSchema>;
+export const recentReportsSchema = z.array(
+  z.object({
+    id: z.uuid(),
+    mint: addressSchema,
+    mode: z.enum(['preview', 'deep']),
+    observedAt: z.iso.datetime(),
+    state: jobStateSchema,
+  }),
+);
 export * from './intelligence.js';
 export class PublicError extends Error {
   constructor(

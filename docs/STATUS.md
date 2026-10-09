@@ -4,7 +4,14 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
-**Stage 06: implemented and locally verified; live acceptance pending credentials. Work stopped at the user's requested boundary.**
+**Stage 07: implemented and locally verified; live provider acceptance remains pending.**
+
+Stage 06 checkpoint: `9dd42b7`. Stage 07 subject:
+`feat: run cancellable scan jobs with durable live events`.
+117 unit tests and nine real PostgreSQL/Redis integration tests pass, alongside strict builds and
+formatting. Database admission/leases/fencing, BullMQ reconciliation, qualified preview/deep
+pipeline, cancellation capabilities, versioned cache, immutable report reads and resumable SSE
+are implemented. See `docs/STAGE_07.md`. Continue stages 08 and 09, then stop.
 
 Stage 04 checkpoint: `5dcb6e4`. Stage 05 checkpoint: `cf15592`. Stage 06 subject:
 `feat: compute versioned distribution risk and sell scenarios`.
@@ -29,7 +36,7 @@ Stage 03 checkpoint: `08cae90`. Stage 04 subject:
 63 unit tests, strict typecheck and full workspace/web build pass. IDL tuple/version decoding,
 signed reserves, CPI/ALT flows, missing owner/receipt safeguards and verified market state are
 implemented. See `docs/STAGE_04.md` and `docs/VENUE_CAPABILITIES.md`. No live corpus result claimed.
-The user's current scope is stages 04–06 only, then stop; do not begin stage 07.
+The user has resumed work: current scope is stages 07–09, then stop. No push; visual design is deferred.
 
 Current branch: `main`. Stage 00 is committed as `35d63d6`; workflow steering as `1e505f2`.
 Stage 01 checkpoint: `4e3ee68`.
@@ -123,9 +130,8 @@ the actual container references/digests are in `docs/ENVIRONMENT.md`.
 
 ## Next task
 
-**Stopped after stage 06 as requested.** On a later explicit continuation, stage 07 adds durable
-scan orchestration and the public report API. Live gates remain pending; do not mark them passed
-without credentials and evidence.
+Implement stages 08–09 with a separate local commit for each, then stop. Live gates remain
+pending; do not mark them passed without credentials and evidence.
 
 Continue directly on `main`, as explicitly requested by the human. No push.
 Website styling and spider animation wait for the user's `design.md` / `desigh.md`.

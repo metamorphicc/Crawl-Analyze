@@ -4,10 +4,11 @@ Solana token intelligence: holder relationships, concentration, liquidity scenar
 and change alerts through a website and Telegram bot. Accepts Solana mint addresses and supported
 pump.fun, Axiom and GMGN links.
 
-**Current state: analytical foundation through stage 06, locally verified.** Supported inputs,
+**Current state: durable scan pipeline through stage 07, locally verified.** Supported inputs,
 holder indexing, Pump decoding, wallet evidence, heuristic risk and sell scenarios are implemented.
-The actual-adapter inspection command is documented in [stage 06](docs/STAGE_06.md). Public durable
-scans, full website and Telegram journeys are subsequent stages. Mainnet acceptance remains pending
+The actual-adapter inspection command is documented in [stage 06](docs/STAGE_06.md); public scan/report
+routes and worker recovery are documented in [stage 07](docs/STAGE_07.md). Full website and Telegram
+journeys are subsequent stages. Mainnet acceptance remains pending
 local provider keys. Website styling awaits the user's `design.md`.
 
 - [Complete build plan](docs/BUILD_PLAN.md)

@@ -8,6 +8,7 @@ import type { Storage } from '@crawlspider/storage';
 import { sharedProviderBudget } from '@crawlspider/storage';
 import { RpcClient, resolveInput } from '@crawlspider/providers';
 import { scanRequestSchema } from '@crawlspider/contracts';
+import { registerScans } from './scans.js';
 
 export function createApp(config: Config, storage: Storage) {
   const app = Fastify({
@@ -27,6 +28,7 @@ export function createApp(config: Config, storage: Storage) {
       config.PROVIDER_DAILY_REQUEST_LIMIT,
     ),
   });
+  registerScans(app, config, storage, rpc);
   app.post('/v1/resolve', async (request) => {
     const parsed = scanRequestSchema.safeParse(request.body);
     if (!parsed.success)

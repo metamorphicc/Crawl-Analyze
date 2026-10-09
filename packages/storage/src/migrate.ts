@@ -16,11 +16,19 @@ export async function migrate(database: ReturnType<typeof createStorage>['pool']
         'utf8',
       );
       await client.query(sql);
-      await client.query('INSERT INTO schema_migrations(version) VALUES ($1)', [SCHEMA_VERSION]);
-    } else {
-      const current = await client.query('SELECT max(version) AS version FROM schema_migrations');
-      if (current.rows[0]?.version !== SCHEMA_VERSION)
-        throw new Error('Unsupported database schema version');
+      await client.query('INSERT INTO schema_migrations(version) VALUES (1)');
+    }
+    const current = await client.query('SELECT max(version) AS version FROM schema_migrations');
+    const version = current.rows[0]?.version;
+    if (!Number.isInteger(version) || version > SCHEMA_VERSION)
+      throw new Error('Unsupported database schema version');
+    for (let next = version + 1; next <= SCHEMA_VERSION; next++) {
+      const name = next === 2 ? '002_scans.sql' : '';
+      if (!name) throw new Error('Missing migration');
+      await client.query(
+        await readFile(fileURLToPath(new URL(`../migrations/${name}`, import.meta.url)), 'utf8'),
+      );
+      await client.query('INSERT INTO schema_migrations(version) VALUES ($1)', [next]);
     }
     await client.query('COMMIT');
   } catch (error) {
