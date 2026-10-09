@@ -6,3 +6,4 @@ export * from './scenarios.js';
 export * from './scoring.js';
 export * from './early.js';
 export * from './changes.js';
+export * from './outcomes.js';

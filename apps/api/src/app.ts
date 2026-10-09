@@ -11,6 +11,8 @@ import { scanRequestSchema } from '@crawlspider/contracts';
 import { registerScans } from './scans.js';
 import { registerChart } from './chart.js';
 import { registerWatches } from './watches.js';
+import { z } from 'zod';
+import { ScanStore } from '@crawlspider/storage';
 
 export function createApp(config: Config, storage: Storage) {
   const app = Fastify({
@@ -37,6 +39,16 @@ export function createApp(config: Config, storage: Storage) {
   registerScans(app, config, storage, rpc);
   registerChart(app, config, storage);
   registerWatches(app, config, storage);
+  app.get('/v1/reports/:id/outcomes', async (request) => {
+    const { id } = z.object({ id: z.uuid() }).parse(request.params);
+    await new ScanStore(storage.pool, config).report(id);
+    return (
+      await storage.pool.query(
+        'SELECT horizon_seconds AS "horizonSeconds",due_at AS "dueAt",result FROM token_outcomes WHERE report_id=$1 ORDER BY horizon_seconds',
+        [id],
+      )
+    ).rows.map((r) => ({ ...r, dueAt: r.dueAt.toISOString() }));
+  });
   app.post('/v1/resolve', async (request) => {
     const parsed = scanRequestSchema.safeParse(request.body);
     if (!parsed.success)

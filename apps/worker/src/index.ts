@@ -4,6 +4,7 @@ import pino from 'pino';
 import { loggerOptions } from '@crawlspider/config';
 import { startRunner } from './runner.js';
 import { startMonitoring } from './monitor.js';
+import { startOutcomes } from './outcomes.js';
 const config = loadConfig();
 const log = pino(loggerOptions(config));
 const storage = createStorage(config);
@@ -15,9 +16,11 @@ if (!Object.values(dependencies).every(Boolean)) {
 } else {
   const runner = startRunner(config, storage);
   const monitor = startMonitoring(config, storage);
+  const outcomes = startOutcomes(config, storage);
   log.info('Durable scan worker ready');
   installShutdown(async () => {
     await monitor.close();
+    await outcomes.close();
     await runner.close();
     await storage.close();
   });

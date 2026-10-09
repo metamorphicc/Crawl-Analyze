@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, lazy, Suspense, type ReactNode } from 'rea
 import { Link } from '@tanstack/react-router';
 import type { AnalysisReport, RelationshipEdge } from '@crawlspider/contracts';
 import { date, percent, safeLink, units, stateLabel } from './format.js';
+import { Outcomes } from './outcomes.js';
 const PriceChart = lazy(() =>
   import('./price-chart.js').then((module) => ({ default: module.PriceChart })),
 );
@@ -173,6 +174,7 @@ export function ReportView({
             </External>
           ))}
         </nav>
+        {!provisional && <Outcomes id={r.id} />}
         <div className="actions">
           {!provisional && (
             <>

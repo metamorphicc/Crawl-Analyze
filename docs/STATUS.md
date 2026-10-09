@@ -4,6 +4,14 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
+**Stage 12: forward collection and reproducible evaluation implemented; empirical calibration pending.**
+
+Stage 11 checkpoint: `6537ff5`. Forward policy `forward-1` records immutable baselines, three
+horizons, exact supply/decimal data, censored failures and separate outcome labels. Chronological
+token holdout, label embargo, fixed thresholds, sample gates and local JSON/SVG export are implemented.
+See `docs/verification/STAGE12.md`. No live data or accuracy claim is fabricated; real calibration
+requires future observations after credentials are configured. Continue stage 13 security/operations.
+
 **Stage 11: linked watchlists and notifications implemented; live acceptance pending.**
 
 Stage 10 checkpoint: `a3ba553`. Stage 11 subject: `feat: add linked watchlists and reliable change alerts`.

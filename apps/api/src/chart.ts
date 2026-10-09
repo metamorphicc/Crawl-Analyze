@@ -51,7 +51,15 @@ export function registerChart(
         return chart;
       }
       // Global cross-process public-provider gate: at most one request per 6 seconds.
-      if (!(await storage.redis.set(`${namespace}:gate`, '1', 'PX', 6000, 'NX')))
+      if (
+        !(await storage.redis.set(
+          options.namespace ? `${namespace}:gate` : 'crawlspider:gecko:gate',
+          '1',
+          'PX',
+          6000,
+          'NX',
+        ))
+      )
         return unavailable('CHART_BUDGET_BUSY');
       await budget.reserve('geckoterminal', signal);
       const chart = await readMarketChart(mint, pool, signal, options.request);

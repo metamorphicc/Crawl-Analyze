@@ -3,6 +3,51 @@ import { z } from 'zod';
 export const CONTRACT_VERSION = '1' as const;
 export const ANALYSIS_VERSION = 'heuristic-1' as const;
 export const PARSER_VERSION = 'pump-idl-1' as const;
+export const OUTCOME_POLICY_VERSION = 'forward-1' as const;
+const decimalObservation = z
+  .string()
+  .max(100)
+  .regex(/^(0|[1-9]\d*)(\.\d+)?$/);
+export const outcomeObservationSchema = z.object({
+  observedAt: z.iso.datetime(),
+  pool: z.string().nullable(),
+  priceUsd: decimalObservation.nullable(),
+  liquidityUsd: decimalObservation.nullable(),
+  supply: z
+    .string()
+    .regex(/^(0|[1-9]\d*)$/)
+    .nullable(),
+  slot: z.string().nullable(),
+  source: z.string(),
+  freshnessUpperSeconds: z.number().int().nullable(),
+  reasons: z.array(z.string()),
+});
+export type OutcomeObservation = z.infer<typeof outcomeObservationSchema>;
+export const forwardOutcomeSchema = z.object({
+  policyVersion: z.literal(OUTCOME_POLICY_VERSION),
+  status: z.enum(['observed', 'censored']),
+  baseline: outcomeObservationSchema,
+  current: outcomeObservationSchema,
+  horizonSeconds: z.number().int().positive(),
+  priceReturnBps: z.string().nullable(),
+  liquidityChangeBps: z.string().nullable(),
+  supplyDelta: z.string().nullable(),
+  labels: z.object({
+    marketDrawdown: z.boolean().nullable(),
+    liquidityDepthDecline: z.boolean().nullable(),
+    liquidityWithdrawal: z.boolean().nullable(),
+    confirmedMaliciousAction: z.boolean().nullable(),
+  }),
+  reasons: z.array(z.string()),
+});
+export type ForwardOutcome = z.infer<typeof forwardOutcomeSchema>;
+export const forwardHistorySchema = z.array(
+  z.object({
+    horizonSeconds: z.number().int().positive(),
+    dueAt: z.iso.datetime(),
+    result: forwardOutcomeSchema.nullable(),
+  }),
+);
 export const rawAmountSchema = z.string().regex(/^(0|[1-9]\d*)$/);
 export const addressSchema = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/);
 export const scanRequestSchema = z
