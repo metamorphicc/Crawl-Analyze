@@ -13,6 +13,13 @@ const schema = z.object({
   SOLANA_RPC_URL: optionalUrl,
   SOLANA_FALLBACK_RPC_URL: optionalUrl,
   TELEGRAM_BOT_TOKEN: optional,
+  TELEGRAM_BOT_USERNAME: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z
+      .string()
+      .regex(/^[A-Za-z][A-Za-z0-9_]{4,31}$/)
+      .optional(),
+  ),
   TELEGRAM_MODE: z.enum(['polling', 'webhook']).default('polling'),
   TELEGRAM_WEBHOOK_URL: optionalUrl,
   TELEGRAM_WEBHOOK_SECRET: optional,

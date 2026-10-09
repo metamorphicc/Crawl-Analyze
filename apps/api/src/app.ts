@@ -10,6 +10,7 @@ import { RpcClient, resolveInput } from '@crawlspider/providers';
 import { scanRequestSchema } from '@crawlspider/contracts';
 import { registerScans } from './scans.js';
 import { registerChart } from './chart.js';
+import { registerWatches } from './watches.js';
 
 export function createApp(config: Config, storage: Storage) {
   const app = Fastify({
@@ -20,7 +21,11 @@ export function createApp(config: Config, storage: Storage) {
     trustProxy: false,
   });
   app.register(helmet);
-  app.register(cors, { origin: config.WEB_ORIGIN, credentials: true });
+  app.register(cors, {
+    origin: config.WEB_ORIGIN,
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  });
   app.register(rateLimit, { max: 60, timeWindow: '1 minute' });
   const rpc = new RpcClient(config, fetch, {
     budget: sharedProviderBudget(
@@ -31,6 +36,7 @@ export function createApp(config: Config, storage: Storage) {
   });
   registerScans(app, config, storage, rpc);
   registerChart(app, config, storage);
+  registerWatches(app, config, storage);
   app.post('/v1/resolve', async (request) => {
     const parsed = scanRequestSchema.safeParse(request.body);
     if (!parsed.success)

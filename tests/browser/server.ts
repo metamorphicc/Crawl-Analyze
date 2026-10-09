@@ -4,7 +4,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import pg from 'pg';
 import { Queue } from 'bullmq';
 import { loadConfig, installShutdown } from '@crawlspider/config';
-import { createStorage } from '@crawlspider/storage';
+import { createStorage, WatchStore, TelegramStore } from '@crawlspider/storage';
 import { PublicError, reportSchema } from '@crawlspider/contracts';
 import { migrate } from '../../packages/storage/src/migrate.js';
 import { startRunner } from '../../apps/worker/src/runner.js';
@@ -17,6 +17,8 @@ const config = {
   NODE_ENV: 'test' as const,
   WEB_ORIGIN: 'http://127.0.0.1:5198',
   HELIUS_API_KEY: 'synthetic-browser-only',
+  TELEGRAM_BOT_USERNAME: 'crawlspider_test',
+  TELEGRAM_BOT_TOKEN: 'synthetic-browser-only',
   SOLANA_RPC_URL: 'http://127.0.0.1:3098/__test__/rpc',
   SOLANA_FALLBACK_RPC_URL: undefined,
   SCAN_IP_MINUTE_LIMIT: 100,
@@ -120,6 +122,14 @@ const runner = startRunner(config, storage, {
   },
 });
 const app = createApp(config, storage);
+app.post('/__test__/approve-link', async (request) => {
+  const { id } = request.body as { id: string };
+  const store = new WatchStore(storage.pool, config);
+  await new TelegramStore(storage.pool, config).recoverIdentity(7007, 7007);
+  await store.requestLink(id, 7007);
+  await store.approveLink(id, 7007);
+  return { ok: true };
+});
 app.post<{ Body: { id: number; method: string; params: unknown[] } }>(
   '/__test__/rpc',
   async (req) => {

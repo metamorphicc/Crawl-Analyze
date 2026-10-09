@@ -30,7 +30,9 @@ export async function migrate(database: ReturnType<typeof createStorage>['pool']
             ? '003_positions.sql'
             : next === 4
               ? '004_telegram.sql'
-              : '';
+              : next === 5
+                ? '005_watches.sql'
+                : '';
       if (!name) throw new Error('Missing migration');
       await client.query(
         await readFile(fileURLToPath(new URL(`../migrations/${name}`, import.meta.url)), 'utf8'),

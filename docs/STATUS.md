@@ -4,6 +4,15 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
+**Stage 11: linked watchlists and notifications implemented; live acceptance pending.**
+
+Stage 10 checkpoint: `a3ba553`. Stage 11 subject: `feat: add linked watchlists and reliable change alerts`.
+Shared website/bot subscriptions, verified device linking, CSRF sessions, deletion, monitor scheduling,
+qualified snapshot comparisons and a bounded durable alert outbox are implemented.
+145 unit tests and 20 real PG/Redis integration tests pass. Browser journeys verify linking, persistent
+preferences and revocation alongside existing scanner flows. See `docs/verification/STAGE11.md`.
+Continue stage 12; credentials and design are still absent locally. No push/deployment.
+
 **Stage 10: Telegram implemented and locally verified; live acceptance pending.**
 
 Stage 09 checkpoint: `16650db`. Stage 10 subject: `feat: add Telegram scanning and report interaction`.

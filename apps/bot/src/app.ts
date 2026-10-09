@@ -43,6 +43,7 @@ export type BotHooks = {
   command?: (ctx: Context, name: string) => Promise<boolean>;
   watch?: (ctx: Context, mint: string) => Promise<void>;
   start?: (ctx: Context, payload: string) => Promise<boolean>;
+  callback?: (ctx: Context) => Promise<boolean>;
 };
 export function createBot(
   config: Config,
@@ -192,9 +193,10 @@ export function createBot(
     else if (options.hooks?.watch) await options.hooks.watch(ctx, job.mint);
     else await reply(ctx, 'Наблюдение пока не подключено.');
   });
-  bot.on('callback_query:data', (ctx) =>
-    ctx.answerCallbackQuery({ text: 'Эта кнопка больше не действует.' }),
-  );
+  bot.on('callback_query:data', async (ctx) => {
+    if (options.hooks?.callback && (await options.hooks.callback(ctx))) return;
+    await ctx.answerCallbackQuery({ text: 'Эта кнопка больше не действует.' });
+  });
   bot.on('message:text', async (ctx) => {
     if (ctx.chat.type !== 'private') return;
     const input = ctx.message.text.trim();

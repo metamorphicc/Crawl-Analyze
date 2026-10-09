@@ -25,6 +25,7 @@ export async function request<T>(
   options: RequestInit = {},
 ): Promise<T> {
   const response = await fetch(apiUrl(path), {
+    credentials: 'include',
     ...options,
     signal: AbortSignal.any([
       AbortSignal.timeout(20000),

@@ -72,6 +72,50 @@ export const serviceStatusSchema = z.object({
   capabilities: z.object({ rpc: z.boolean(), holderIndex: z.boolean(), telegram: z.boolean() }),
 });
 export type ServiceStatus = z.infer<typeof serviceStatusSchema>;
+export const notificationSettingsSchema = z
+  .object({
+    enabled: z.boolean().default(true),
+    cadenceMinutes: z.number().int().min(15).max(1440).default(15),
+    utcOffsetMinutes: z.number().int().min(-720).max(840).default(0),
+    quietHours: z
+      .object({ start: z.number().int().min(0).max(23), end: z.number().int().min(0).max(23) })
+      .nullable()
+      .default(null),
+    riskDelta: z.number().int().min(5).max(100).default(10),
+    positionDeltaBps: z.number().int().min(10).max(10000).default(100),
+  })
+  .strict();
+export type NotificationSettings = z.infer<typeof notificationSettingsSchema>;
+export const sessionInfoSchema = z.object({
+  user: z
+    .object({
+      id: rawAmountSchema,
+      csrf: z.string(),
+      settings: notificationSettingsSchema,
+      pauseReason: z.string().nullable(),
+    })
+    .nullable(),
+});
+export const linkBeginSchema = z.object({
+  id: z.uuid(),
+  code: z.string().regex(/^\d{6}$/),
+  url: z.url(),
+  expiresAt: z.iso.datetime(),
+});
+export const linkStatusSchema = z.object({
+  state: z.enum(['pending', 'requested', 'approved', 'consumed']),
+});
+export const watchlistSchema = z.array(
+  z.object({
+    mint: addressSchema,
+    lastReportId: z.uuid().nullable(),
+    nextCheckAt: z.iso.datetime(),
+    lastCheckAt: z.iso.datetime().nullable(),
+    pendingJobId: z.uuid().nullable(),
+    lastQuality: z.enum(['complete', 'partial', 'unavailable']).nullable(),
+  }),
+);
+export const successSchema = z.object({ ok: z.literal(true) });
 export const queueStatusSchema = z.object({
   capacity: z.number().int().positive(),
   lanes: z.array(

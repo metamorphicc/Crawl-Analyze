@@ -176,6 +176,7 @@ export function ReportView({
         <div className="actions">
           {!provisional && (
             <>
+              <a href={`/watchlist?mint=${r.identity.mint}`}>Наблюдать токен</a>
               <Link to="/report/$id" params={{ id: r.id }}>
                 Постоянная ссылка на отчёт
               </Link>

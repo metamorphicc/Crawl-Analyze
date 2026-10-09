@@ -24,6 +24,7 @@ import { request, useResource, errorMessage, saveCancellation, cancellation } fr
 import { date, stateLabel, phaseLabel } from './format.js';
 import { useLiveJob } from './live.js';
 import { ReportView } from './report.js';
+import { Watchlist } from './watches.js';
 import './base.css';
 const root = createRootRoute({
   component: Layout,
@@ -379,21 +380,6 @@ function Status() {
         </>
       )}
       <Queue />
-    </>
-  );
-}
-function Watchlist() {
-  return (
-    <>
-      <h1>Наблюдение</h1>
-      <p>
-        Постоянный список токенов и уведомления через Telegram появятся после подключения бота и
-        проверки личности. Эта функция ещё не включена.
-      </p>
-      <p>
-        Пока можно сохранить ссылку на исторический отчёт или повторно сканировать токен без входа.
-      </p>
-      <Link to="/">Открыть сканер</Link>
     </>
   );
 }

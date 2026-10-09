@@ -158,7 +158,7 @@ test('unavailable infrastructure, missing reports, watchlist and methodology rem
   await page.goto('/report/00000000-0000-4000-8000-000000000000');
   await expect(page.getByRole('alert')).toContainText('Результат не найден');
   await page.goto('/watchlist');
-  await expect(page.getByText(/Эта функция ещё не включена/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Привязать Telegram' })).toBeVisible();
   await page.goto('/methodology');
   await expect(page.getByText(/Это не вероятность мошенничества/)).toBeVisible();
   await page.goto('/status');

@@ -4,6 +4,8 @@ import { createStorage } from '@crawlspider/storage';
 import { createBot, startBotProcessor } from './app.js';
 import { webhookServer } from './runtime.js';
 import { startPolling } from './polling.js';
+import { watchHooks } from './watches.js';
+import { startAlerts } from './alerts.js';
 const config = loadConfig(),
   log = pino(loggerOptions(config));
 if (!config.TELEGRAM_BOT_TOKEN) {
@@ -16,6 +18,7 @@ if (!config.TELEGRAM_BOT_TOKEN) {
     poll: ReturnType<typeof startPolling> | undefined,
     server: ReturnType<typeof webhookServer> | undefined;
   let closing: Promise<void> | undefined;
+  let alerts: ReturnType<typeof startAlerts> | undefined;
   function close() {
     return (closing ??= clean());
   }
@@ -26,6 +29,7 @@ if (!config.TELEGRAM_BOT_TOKEN) {
       await new Promise<void>((resolve) => server!.close(() => resolve()));
     }
     await processor?.close();
+    await alerts?.close();
     await lock.query('SELECT pg_advisory_unlock(733920)');
     lock.release();
     await storage.close();
@@ -40,8 +44,10 @@ if (!config.TELEGRAM_BOT_TOKEN) {
       throw new Error('Another bot runtime is already active');
     if (!Object.values(await storage.readiness()).every(Boolean))
       throw new Error('Migrate and restore local storage first');
-    const app = createBot(config, storage);
+    const app = createBot(config, storage, { hooks: watchHooks(config, storage) });
     await app.bot.init();
+    if (config.TELEGRAM_BOT_USERNAME && app.bot.botInfo.username !== config.TELEGRAM_BOT_USERNAME)
+      throw new Error('Configured username does not match this bot');
     const webhook = await app.bot.api.getWebhookInfo();
     if (config.TELEGRAM_MODE === 'polling' && webhook.url)
       throw new Error('Existing webhook must be intentionally removed before polling');
@@ -56,6 +62,7 @@ if (!config.TELEGRAM_BOT_TOKEN) {
       { command: 'settings', description: 'Настройки уведомлений' },
     ]);
     processor = startBotProcessor(config, storage, app.bot);
+    alerts = startAlerts(config, storage, app.bot);
     if (config.TELEGRAM_MODE === 'webhook') {
       server = webhookServer(config, app.store);
       await new Promise<void>((resolve, reject) => {

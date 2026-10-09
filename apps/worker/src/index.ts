@@ -3,6 +3,7 @@ import { createStorage } from '@crawlspider/storage';
 import pino from 'pino';
 import { loggerOptions } from '@crawlspider/config';
 import { startRunner } from './runner.js';
+import { startMonitoring } from './monitor.js';
 const config = loadConfig();
 const log = pino(loggerOptions(config));
 const storage = createStorage(config);
@@ -13,8 +14,10 @@ if (!Object.values(dependencies).every(Boolean)) {
   process.exitCode = 1;
 } else {
   const runner = startRunner(config, storage);
+  const monitor = startMonitoring(config, storage);
   log.info('Durable scan worker ready');
   installShutdown(async () => {
+    await monitor.close();
     await runner.close();
     await storage.close();
   });
