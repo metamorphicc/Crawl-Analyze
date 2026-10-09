@@ -5,8 +5,12 @@ import { useResource, errorMessage } from './api.js';
 import { date } from './format.js';
 import { External } from './report.js';
 import { shortAddress } from './wallet-view.js';
-export function PriceChart({ mint }: { mint: string }) {
-  const query = useResource(`/v1/tokens/${encodeURIComponent(mint)}/market`, marketChartSchema);
+export function PriceChart({ mint, refresh = false }: { mint: string; refresh?: boolean }) {
+  const query = useResource(
+    `/v1/tokens/${encodeURIComponent(mint)}/market`,
+    marketChartSchema,
+    refresh,
+  );
   if (query.data && query.data.mint !== mint)
     return <p role="alert">The source returned candles for another token.</p>;
   return query.error ? (

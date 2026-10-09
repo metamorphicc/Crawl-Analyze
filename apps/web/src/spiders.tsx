@@ -1,6 +1,4 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Pause, Play } from 'lucide-react';
-import { phaseLabel, stateLabel } from './format.js';
 import { SpiderRenderer, type CrawlActivity } from './spider-renderer.js';
 
 type Activity = CrawlActivity;
@@ -9,13 +7,11 @@ const SpiderContext = createContext<{
   activity: Activity;
   still: boolean;
   motionPaused: boolean;
-  toggleMotion: () => void;
 }>({
   setActivity: () => {},
   activity: null,
   still: false,
   motionPaused: false,
-  toggleMotion: () => {},
 });
 export const useSpiderActivity = () => useContext(SpiderContext);
 
@@ -32,75 +28,29 @@ export function SpiderMark({ size = 32 }: { size?: number }) {
   );
 }
 
-export function SpiderEnvironment({ children, route }: { children: ReactNode; route: string }) {
-  const [activity, setActivity] = useState<Activity>(null),
-    [paused, setPaused] = useState(() => {
-      try {
-        return localStorage.getItem('crawlspider:pause-motion') === 'true';
-      } catch {
-        return false;
-      }
-    }),
-    [reduced, setReduced] = useState(() => matchMedia('(prefers-reduced-motion: reduce)').matches);
+export function SpiderEnvironment({ children }: { children: ReactNode }) {
+  const [activity, setActivity] = useState<Activity>(null);
+  const [reduced, setReduced] = useState(
+    () => matchMedia('(prefers-reduced-motion: reduce)').matches,
+  );
   useEffect(() => {
     const preference = matchMedia('(prefers-reduced-motion: reduce)'),
       change = () => setReduced(preference.matches);
     preference.addEventListener('change', change);
     return () => preference.removeEventListener('change', change);
   }, []);
-  const toggleMotion = () => {
-    if (reduced) return;
-    const next = !paused;
-    setPaused(next);
-    try {
-      localStorage.setItem('crawlspider:pause-motion', String(next));
-    } catch {
-      /* Motion controls also work when storage is restricted. */
-    }
-  };
   const settled = activity !== null && !['queued', 'running'].includes(activity.state);
   return (
     <SpiderContext.Provider
       value={{
         setActivity,
         activity,
-        still: paused || reduced || settled,
-        motionPaused: paused || reduced,
-        toggleMotion,
+        still: reduced || settled,
+        motionPaused: reduced,
       }}
     >
-      <div className="site-shell" data-motion={paused || reduced ? 'paused' : 'running'}>
+      <div className="site-shell" data-motion={reduced ? 'paused' : 'running'}>
         {children}
-        <div className="crawler-control">
-          <span className="crawler-mode">
-            {activity
-              ? `${stateLabel[activity.state] || activity.state} · ${phaseLabel[activity.phase] || activity.phase}`
-              : route === '/'
-                ? 'Ambient crawlers'
-                : 'Ambient network'}
-          </span>
-          <button
-            className="motion-toggle"
-            type="button"
-            disabled={reduced}
-            aria-pressed={paused || reduced}
-            aria-label={
-              reduced
-                ? 'Scene motion disabled by system preference'
-                : paused
-                  ? 'Resume scene motion'
-                  : 'Pause scene motion'
-            }
-            onClick={toggleMotion}
-          >
-            {paused || reduced ? (
-              <Play size={14} aria-hidden="true" />
-            ) : (
-              <Pause size={14} aria-hidden="true" />
-            )}
-            <span>{reduced ? 'Reduced motion' : paused ? 'Resume' : 'Pause'}</span>
-          </button>
-        </div>
       </div>
     </SpiderContext.Provider>
   );

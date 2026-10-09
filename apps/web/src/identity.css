@@ -461,3 +461,26 @@
     animation: none;
   }
 }
+
+/* The live chart is mounted once, directly below the scan scene, including before previews. */
+.result-arrival > .market-panel {
+  margin-block: 0 var(--space-2xl);
+  padding: var(--space-xl);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-md);
+  background: var(--color-paper-2);
+}
+.result-arrival > .market-panel .chart {
+  height: 340px;
+}
+.report-findings-summary {
+  grid-template-columns: minmax(0, 1fr);
+}
+.report-findings-summary .verdict-content {
+  max-width: 55rem;
+}
+@media (max-width: 540px) {
+  .result-arrival > .market-panel {
+    padding: var(--space-lg);
+  }
+}

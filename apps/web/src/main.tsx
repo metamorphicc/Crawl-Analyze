@@ -27,6 +27,7 @@ import { ReportView } from './report.js';
 import { CrawlStage } from './crawl-stage.js';
 import { SiteBackground } from './site-background.js';
 import { ReportArrival } from './report-arrival.js';
+import { MarketPanel } from './market-panel.js';
 import { Watchlist } from './watches.js';
 import { ScanLine, Bookmark, BookOpen, Activity, Menu, ArrowUpRight } from 'lucide-react';
 import { SpiderCanvas, SpiderEnvironment, SpiderMark, useSpiderActivity } from './spiders.js';
@@ -96,7 +97,7 @@ function Layout() {
     document.getElementById('content')?.focus();
   }, [location]);
   return (
-    <SpiderEnvironment route={location}>
+    <SpiderEnvironment>
       <SiteBackground />
       <a className="skip" href="#content">
         Skip to content
@@ -492,20 +493,17 @@ function Live({ id, mint }: { id: string; mint: string }) {
         )}
       </CrawlStage>
       {cancelError && <p role="alert">{cancelError}</p>}
-      {report && (
-        <ReportArrival
-          reportId={report.id}
-          ready={Boolean(
-            job &&
-            ['complete', 'partial'].includes(job.state) &&
-            job.reportId === report.id &&
-            report.jobId === id &&
-            report.identity.mint === mint,
-          )}
-        >
-          <ReportView key={report.id} report={report} provisional={report.id !== job?.reportId} />
-        </ReportArrival>
-      )}
+      <ReportArrival arrivalKey={id} ready={Boolean(job && job.id === id && job.mint === mint)}>
+        <MarketPanel mint={mint} refresh={!job || ['queued', 'running'].includes(job.state)} />
+        {report && (
+          <ReportView
+            key={report.id}
+            report={report}
+            provisional={report.id !== job?.reportId}
+            showChart={false}
+          />
+        )}
+      </ReportArrival>
     </>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type PointerEvent } from 'react';
 import type { AnalysisReport, RelationshipEdge } from '@crawlspider/contracts';
-import { Minus, Plus, RotateCcw, Pause, Play, ArrowUpRight } from 'lucide-react';
+import { Minus, Plus, RotateCcw, ArrowUpRight } from 'lucide-react';
 import { percent, units } from './format.js';
 import { shareBps, shortAddress, WalletFlags } from './wallet-view.js';
 import { WalletScene } from './wallet-scene.js';
@@ -20,7 +20,7 @@ export function RelationshipMap({
   onEvidence?: ((edge: RelationshipEdge) => void) | undefined;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
-  const { motionPaused: paused, toggleMotion } = useSpiderActivity();
+  const { motionPaused: paused } = useSpiderActivity();
   const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
   const svg = useRef<SVGSVGElement>(null),
     stage = useRef<HTMLDivElement>(null),
@@ -121,13 +121,6 @@ export function RelationshipMap({
           </span>
         </div>
         <div className="map-controls">
-          <button
-            aria-label={paused ? 'Resume scene motion' : 'Pause scene motion'}
-            aria-pressed={paused}
-            onClick={toggleMotion}
-          >
-            {paused ? <Play size={16} /> : <Pause size={16} />}
-          </button>
           <button aria-label="Zoom out" disabled={viewport.zoom <= 0.75} onClick={() => zoom(-1)}>
             <Minus size={16} />
           </button>

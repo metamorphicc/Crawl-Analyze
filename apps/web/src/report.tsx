@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, lazy, Suspense, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import type { AnalysisReport, RelationshipEdge } from '@crawlspider/contracts';
 import { date, percent, safeLink, units, stateLabel } from './format.js';
@@ -7,9 +7,7 @@ import { ReportMetrics, ReportOverview } from './report-overview.js';
 import { RelationshipMap } from './relationship-map.js';
 import { shortAddress, shareBps, WalletFlags } from './wallet-view.js';
 import { ArrowUpRight, Download, Copy, Eye } from 'lucide-react';
-const PriceChart = lazy(() =>
-  import('./price-chart.js').then((module) => ({ default: module.PriceChart })),
-);
+import { MarketPanel } from './market-panel.js';
 export function External({ url, children }: { url: string; children: ReactNode }) {
   const safe = safeLink(url);
   return safe ? (
@@ -97,15 +95,16 @@ export function ReportView({
   report: r,
   provisional = false,
   historical = false,
+  showChart = true,
 }: {
   report: AnalysisReport;
   provisional?: boolean;
   historical?: boolean;
+  showChart?: boolean;
 }) {
   const [search, setSearch] = useState(''),
     [edge, setEdge] = useState<RelationshipEdge>(),
     [copied, setCopied] = useState(''),
-    [chart, setChart] = useState(!provisional),
     [now, setNow] = useState(Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 30000);
@@ -214,24 +213,8 @@ export function ReportView({
         <span>{provisional ? 'Still gathering evidence' : 'A snapshot, with the receipts.'}</span>
       </div>
       <ReportMetrics report={r} />
-      <div className="report-findings">
-        <section className="market-panel">
-          <div className="panel-heading">
-            <h3>Market chart</h3>
-            <span>USD · 5-minute candles</span>
-          </div>
-          <p>
-            External USD candles are displayed separately from the report snapshot and reserve
-            calculations.
-          </p>
-          {chart ? (
-            <Suspense fallback={<p role="status">Loading chart…</p>}>
-              <PriceChart mint={r.identity.mint} />
-            </Suspense>
-          ) : (
-            <button onClick={() => setChart(true)}>Load candles</button>
-          )}
-        </section>
+      <div className={`report-findings ${showChart ? '' : 'report-findings-summary'}`}>
+        {showChart && <MarketPanel mint={r.identity.mint} />}
         <aside className="verdict-panel" aria-label="Risk verdict">
           <ReportOverview report={r} />
           <div className="verdict-actions">

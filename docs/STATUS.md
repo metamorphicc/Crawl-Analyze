@@ -4,6 +4,17 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
+**Live scan arrival, automatic chart placement and removal of pause controls.**
+
+The live chart is mounted immediately beneath the crawl scene, before the preview or final report,
+and refreshes through the existing query interval while queued/running. Manual chart loading gates
+are removed in every report. Scroll/focus now moves once after the matching job is confirmed, rather
+than waiting for terminal state. The same chart stays mounted across preview/final updates without
+being duplicated in the report. Both pause controls and stored manual pause state are removed;
+OS reduced motion and visibility suspension remain. See `docs/FIELD_JOURNAL_UI.md`.
+No tests, typecheck, browser checks or provider requests at the user's direction. Frontend serving
+assets only; no server start, push or deployment. Stages 13 and 14 remain pending.
+
 **Original field-journal UI and final-report arrival after checkpoint `be480fb`.**
 
 Home uses an asymmetric investigation desk, original headline and an independent scanner block.

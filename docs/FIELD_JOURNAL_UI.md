@@ -18,19 +18,24 @@ This is an in-place visual substage. The durable services, report semantics and 
 
 ## Motion and navigation
 
-- `ReportArrival` scrolls and moves keyboard focus once when a matching final report arrives for
-  a complete or partial job. A preview, failed/cancelled job, unrelated report or repeated update
-  cannot trigger that move. In a hidden tab it waits until the tab is visible. The completed
-  scan also offers an explicit findings link. Saved-report routes do not force a scan transition.
-- Smooth arrival respects persisted pause and OS reduced motion. Entrance effects are short
-  fades and a single underline draw; there is no perpetual text movement. Paused/reduced states
-  render headings and values at their readable final appearance.
-- Spiders, wallet drift and bidirectional signals preserve their existing section boundaries.
-  The global pause now applies to CSS motion as well as both Canvas scenes.
+- Follow-up correction: live scans mount their market chart immediately below the crawl scene,
+  independently of preview/final report availability. Every report also loads its chart by default;
+  there is no manual Load candles gate. The live chart polls every 15 seconds while queued/running,
+  using the existing query and server cache. Missing prices stay explicitly unavailable.
+- `ReportArrival` moves keyboard focus and scrolls once after the server confirms the matching job.
+  It targets the already-mounted chart/results area, without waiting for deep analysis to finish.
+  Preview-to-final updates retain the same destination and do not trigger repeated jumps. Hidden
+  tabs defer the move until visible. Saved-report routes do not force a scan transition.
+- User-requested pause controls are removed from the map and global shell. Stored pause preferences
+  are no longer read, so a previously paused browser is not stranded without a Resume button.
+  OS reduced motion remains supported and disables smooth scrolling / decorative motion.
+- Spiders, wallet drift and signals keep their section boundaries and suspend offscreen/hidden.
+  Entrance effects remain short fades and an underline draw. Reduced-motion states render their
+  readable final appearance.
 - The website background has a positive stacking layer below explicitly elevated content,
   a stronger mask, soft green/blue atmosphere, blurred paths, bright passing packets and rings.
   It is decorative, shared across all routes and has a static CSS backdrop if Canvas is unavailable.
-  It runs at 30 fps, freezes with pause/reduced motion and suspends when the tab is hidden.
+  It runs at 30 fps, freezes with reduced motion and suspends when the tab is hidden.
 
 ## Delivery boundary
 
