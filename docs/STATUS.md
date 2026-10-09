@@ -1,8 +1,24 @@
 # Implementation status
 
-Updated: 2026-10-09, Asia/Novosibirsk.
+Updated: 2026-10-10, Asia/Novosibirsk.
 
 ## Current stage
+
+**Browser favicon and recovery after Docker Desktop was closed.**
+
+Added the existing green spider mark as a static SVG favicon, with thicker strokes for small tabs.
+Verified the built HTML link, emitted asset, SVG HTTP response and Chromium rendering at 16/32/64px.
+The web production build passes; existing NODE_ENV and bundle-size warnings remain.
+Docker Desktop initially crashed on inaccessible stale runtime sockets. Preserved those runtime
+directories as local recovery backups and restarted Desktop without resetting its data disk.
+PostgreSQL and Redis retained their named volumes. Happ occupied local Redis port 56379; the
+ignored local environment now uses 56380, with unchanged credentials and loopback-only exposure.
+Restarted the compiled API/worker after checking that no live scan lease was active. Both databases
+pass `doctor:services`; local and public API readiness return 200 with schema ready and the correct
+www frontend CORS header. Each preview/deep/monitor queue has exactly one connected worker.
+Cloudflared remained running. No scan was submitted or Telegram message sent during these checks.
+The user explicitly authorized pushing this favicon checkpoint to main, overriding the usual
+local-only workflow for this request. Stages 13/14 are still pending in full.
 
 **Targeted quick/extended scans, scoped distribution score and independent charts.**
 

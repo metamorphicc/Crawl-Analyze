@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+  <!-- Existing CrawlSpider mark, with heavier strokes for browser-tab sizes. -->
+  <style>
+    :root {
+      --color-paper: oklch(14% 0.008 220);
+      --color-accent: oklch(78% 0.25 142);
+    }
+  </style>
+  <rect width="40" height="40" rx="7" fill="var(--color-paper)" />
+  <g
+    fill="none"
+    stroke="var(--color-accent)"
+    stroke-width="2.2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path
+      d="M16 15 10 10 7 4M15 18 6 16 2 11M15 23 6 25 2 30M16 26 10 31 8 37M24 15 30 10 33 4M25 18 34 16 38 11M25 23 34 25 38 30M24 26 30 31 32 37"
+    />
+    <ellipse cx="20" cy="23" rx="6" ry="8" />
+    <circle cx="20" cy="13" r="4" />
+    <path d="M20 19v6" />
+  </g>
+</svg>
