@@ -4,6 +4,20 @@ Updated: 2026-10-10, Asia/Novosibirsk.
 
 ## Current stage
 
+**Fixed fresh and cached external charts being rejected by the public contract.**
+
+An available external-pool response put a qualification in `reasons`, which must be empty for
+available charts. Browser parsing failed, and subsequent cache parsing was reported as provider
+failure. Qualifications now have a separate optional field; the final response is validated before
+caching and invalid legacy entries are discarded for bounded fresh retrieval. Safe phase logging
+distinguishes cache errors without exposing provider messages or secrets. Public Chromium now
+renders four actual candles for the same saved report with no page errors; repeated cache/public
+reads also pass. Old candles retain their stale warning; reports and reserve eligibility are unchanged.
+Verification: typecheck, 171 unit tests, two targeted PostgreSQL/Redis chart integration tests,
+full build and changed-file format/diff checks pass. Restarted only the agent-managed API;
+existing workers and tunnel remain. No push/deployment or new scan. Stages 13/14 still pending.
+See `docs/verification/CHART_CONTRACT_REPAIR.md`.
+
 **Browser favicon and recovery after Docker Desktop was closed.**
 
 Added the existing green spider mark as a static SVG favicon, with thicker strokes for small tabs.

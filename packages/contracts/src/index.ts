@@ -189,6 +189,7 @@ export const marketChartSchema = z
     currency: z.literal('USD'),
     intervalSeconds: z.literal(300),
     reasons: z.array(z.string()),
+    qualifications: z.array(z.literal('EXTERNAL_CHART_POOL_NOT_A_VERIFIED_SELL_MODEL')).optional(),
     candles: z
       .array(
         z.object({

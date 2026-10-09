@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import pg from 'pg';
 import { Queue } from 'bullmq';
 import { loadConfig } from '@crawlspider/config';
@@ -13,6 +13,8 @@ import { key } from '../fixtures/analytics.js';
 import { comparePositions } from '@crawlspider/analysis';
 import Fastify from 'fastify';
 import { registerChart } from '../../apps/api/src/chart.js';
+import { ProviderError } from '@crawlspider/providers';
+import { marketChartSchema } from '@crawlspider/contracts';
 async function environment() {
   const config = {
     ...loadConfig(),
@@ -129,6 +131,12 @@ describe('durable scans on real PostgreSQL/Redis', () => {
       const cached = await app.inject(`/v1/tokens/${key(1)}/market`);
       expect(cached.json().status).toBe('available');
       expect(calls).toBe(1);
+      // Exercise a real HTTP socket as well as inject: this is how browsers reach the service.
+      const address = await app.listen({ host: '127.0.0.1', port: 0 });
+      const overHttp = await fetch(`${address}/v1/tokens/${key(1)}/market`);
+      expect(overHttp.status).toBe(200);
+      expect(await overHttp.json()).toMatchObject({ status: 'available', mint: key(1) });
+      expect(calls).toBe(1);
       await e.storage.redis.set(
         `${namespace}:${key(1)}:${key(2)}`,
         JSON.stringify({ ...cached.json(), mint: key(9) }),
@@ -150,13 +158,77 @@ describe('durable scans on real PostgreSQL/Redis', () => {
       await e.storage.redis.del(`${namespace}:gate`);
       const discovered = (await app.inject(`/v1/tokens/${key(7)}/market`)).json();
       expect(discovered).toMatchObject({ status: 'available', pool: key(8) });
-      expect(discovered.reasons).toContain('EXTERNAL_CHART_POOL_NOT_A_VERIFIED_SELL_MODEL');
+      expect(discovered.reasons).toEqual([]);
+      expect(discovered.qualifications).toContain('EXTERNAL_CHART_POOL_NOT_A_VERIFIED_SELL_MODEL');
+      expect(marketChartSchema.parse(discovered).status).toBe('available');
       expect(calls).toBe(3);
+      const externalHttp = await fetch(`${address}/v1/tokens/${key(7)}/market`);
+      expect(marketChartSchema.parse(await externalHttp.json())).toEqual(discovered);
+      expect(calls).toBe(3);
+      // A formerly emitted response had valid candles but failed the shared contract.
+      await e.storage.redis.set(
+        `${namespace}:${key(7)}:${key(8)}`,
+        JSON.stringify({
+          ...discovered,
+          reasons: ['EXTERNAL_CHART_POOL_NOT_A_VERIFIED_SELL_MODEL'],
+        }),
+        'EX',
+        60,
+      );
+      await e.storage.redis.del(`${namespace}:gate`);
+      const recovered = (await app.inject(`/v1/tokens/${key(7)}/market`)).json();
+      expect(marketChartSchema.parse(recovered)).toMatchObject({
+        status: 'available',
+        reasons: [],
+        qualifications: ['EXTERNAL_CHART_POOL_NOT_A_VERIFIED_SELL_MODEL'],
+      });
+      expect(calls).toBe(4);
       expect((await e.store.report(externalReport.id)).scenarios.scenarios).toEqual([]);
     } finally {
       await app.close();
       await e.storage.redis.del(`${namespace}:gate`, `${namespace}:${key(1)}:${key(2)}`);
       await e.storage.redis.del(`${namespace}:pool:${key(7)}`, `${namespace}:${key(7)}:${key(8)}`);
+      await e.close();
+    }
+  });
+  it('records chart failure phase without logging provider messages or credentials', async () => {
+    const e = await environment(),
+      app = Fastify(),
+      namespace = `chart-failure-test:${randomUUID()}`;
+    const warn = vi.spyOn(app.log, 'warn');
+    registerChart(app, e.config, e.storage, {
+      namespace,
+      request: async () => {
+        const error = new ProviderError('CHART_PROVIDER_UNAVAILABLE');
+        error.message = 'sensitive-provider-response-that-must-not-be-logged';
+        throw error;
+      },
+    });
+    try {
+      const job = await e.store.admit(key(7), 'preview', 'chart-failure');
+      const lease = (await e.store.claim(job.job.id))!;
+      const report = fixtureReport(lease.id, 'preview', key(7));
+      report.scenarios.scenarios = [];
+      await e.store.finish(lease, report);
+      const result = (await app.inject(`/v1/tokens/${key(7)}/market`)).json();
+      expect(result).toMatchObject({
+        status: 'unavailable',
+        candles: [],
+        reasons: ['CHART_PROVIDER_UNAVAILABLE'],
+      });
+      expect(warn).toHaveBeenCalledWith(
+        {
+          phase: 'provider',
+          errorType: 'ProviderError',
+          providerCode: 'CHART_PROVIDER_UNAVAILABLE',
+        },
+        'Market chart request failed',
+      );
+      expect(JSON.stringify(warn.mock.calls)).not.toContain('sensitive-provider-response');
+    } finally {
+      warn.mockRestore();
+      await app.close();
+      await e.storage.redis.del(`${namespace}:gate`);
       await e.close();
     }
   });

@@ -1,7 +1,12 @@
 import type { FastifyInstance } from 'fastify';
 import type { Config } from '@crawlspider/config';
 import { marketChartSchema, type MarketChart } from '@crawlspider/contracts';
-import { readMarketChart, discoverChartPool, validAddress } from '@crawlspider/providers';
+import {
+  readMarketChart,
+  discoverChartPool,
+  validAddress,
+  ProviderError,
+} from '@crawlspider/providers';
 import { ScanStore, sharedProviderBudget, type Storage } from '@crawlspider/storage';
 export function registerChart(
   app: FastifyInstance,
@@ -40,6 +45,7 @@ export function registerChart(
       stop.signal,
       AbortSignal.timeout(config.PROVIDER_REQUEST_TIMEOUT_MS),
     ]);
+    let phase = 'cache';
     try {
       await storage.ensureRedis();
       const namespace = options.namespace || 'crawlspider:chart:v1';
@@ -51,9 +57,15 @@ export function registerChart(
       let cacheKey = `${namespace}:${mint}:${pool}`;
       const cached = await storage.redis.get(cacheKey);
       if (cached) {
-        const chart = marketChartSchema.parse(JSON.parse(cached));
-        if (chart.mint !== mint || chart.pool !== pool) return unavailable('CHART_CACHE_MISMATCH');
-        return chart;
+        const chart = marketChartSchema.safeParse(JSON.parse(cached));
+        if (chart.success) {
+          if (chart.data.mint !== mint || chart.data.pool !== pool)
+            return unavailable('CHART_CACHE_MISMATCH');
+          return chart.data;
+        }
+        // Discard invalid cache entries, including the older response that incorrectly put
+        // a display-only qualification in the unavailable-reasons field. Fetch real candles.
+        await storage.redis.del(cacheKey);
       }
       // At most one enrichment per 6 seconds across processes; discovery adds at most one
       // request (two total). Each HTTP call also consumes the shared daily/request budget.
@@ -68,7 +80,9 @@ export function registerChart(
       )
         return unavailable('CHART_BUDGET_BUSY');
       const request: typeof fetch = async (url, init) => {
+        phase = 'budget';
         await budget.reserve('geckoterminal', signal);
+        phase = 'provider';
         return (options.request || fetch)(url, init);
       };
       if (!pool) {
@@ -79,10 +93,20 @@ export function registerChart(
       }
       const chart = await readMarketChart(mint, pool, signal, request);
       if (!report.scenarios.scenarios.some((s) => s.quotes.some((q) => q.market === pool)))
-        chart.reasons.push('EXTERNAL_CHART_POOL_NOT_A_VERIFIED_SELL_MODEL');
+        chart.qualifications = ['EXTERNAL_CHART_POOL_NOT_A_VERIFIED_SELL_MODEL'];
+      marketChartSchema.parse(chart);
+      phase = 'cache-write';
       await storage.redis.set(cacheKey, JSON.stringify(chart), 'EX', 60);
       return chart;
-    } catch {
+    } catch (error) {
+      app.log.warn(
+        {
+          phase,
+          errorType: error instanceof Error ? error.name : 'UnknownError',
+          ...(error instanceof ProviderError ? { providerCode: error.code } : {}),
+        },
+        'Market chart request failed',
+      );
       return unavailable('CHART_PROVIDER_UNAVAILABLE');
     }
   });
