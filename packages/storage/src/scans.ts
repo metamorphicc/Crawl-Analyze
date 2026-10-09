@@ -65,8 +65,9 @@ export class ScanStore {
     bucket: string,
     lane: Lane = mode,
     force = false,
+    transaction?: pg.PoolClient,
   ): Promise<ScanAcceptance> {
-    return this.tx(async (c) => {
+    const work = async (c: pg.PoolClient): Promise<ScanAcceptance> => {
       await c.query('SELECT pg_advisory_xact_lock(710007)');
       const dedupe = [mint, mode, CONTRACT_VERSION, ANALYSIS_VERSION, PARSER_VERSION].join('/');
       const active = await c.query(
@@ -121,7 +122,8 @@ export class ScanStore {
       );
       await this.event(c, id, 'queued', { mode, lane });
       return { job: job(inserted.rows[0]), reused: false, report: null, cancelToken };
-    });
+    };
+    return transaction ? work(transaction) : this.tx(work);
   }
   async details(id: string) {
     const r = await this.pool.query('SELECT * FROM scan_jobs WHERE id=$1', [id]);

@@ -23,7 +23,14 @@ export async function migrate(database: ReturnType<typeof createStorage>['pool']
     if (!Number.isInteger(version) || version > SCHEMA_VERSION)
       throw new Error('Unsupported database schema version');
     for (let next = version + 1; next <= SCHEMA_VERSION; next++) {
-      const name = next === 2 ? '002_scans.sql' : next === 3 ? '003_positions.sql' : '';
+      const name =
+        next === 2
+          ? '002_scans.sql'
+          : next === 3
+            ? '003_positions.sql'
+            : next === 4
+              ? '004_telegram.sql'
+              : '';
       if (!name) throw new Error('Missing migration');
       await client.query(
         await readFile(fileURLToPath(new URL(`../migrations/${name}`, import.meta.url)), 'utf8'),

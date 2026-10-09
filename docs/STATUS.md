@@ -4,6 +4,16 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
+**Stage 10: Telegram implemented and locally verified; live acceptance pending.**
+
+Stage 09 checkpoint: `16650db`. Stage 10 subject: `feat: add Telegram scanning and report interaction`.
+Shared admission/reports, durable inbox/offset, progress edits, owner-checked callbacks, webhook
+secret, 429 cooldowns and conservative ambiguous-delivery handling are implemented. See
+`docs/STAGE_10.md`. The user authorized stages 10–14; no push/deployment.
+145 unit tests, 15 real PG/Redis integration tests and strict builds/formatting pass. Telegram
+transport is synthetic in tests. Read-only live diagnostic confirms absent local bot credentials.
+Next: stage 11, linked watchlists and durable notifications.
+
 **Stage 09: functional website implemented and locally verified; design and live acceptance pending.**
 
 Stage 07 checkpoint: `49f50bf`. Stage 08 checkpoint: `93433bc`. Stage 09 subject:
@@ -149,9 +159,8 @@ the actual container references/digests are in `docs/ENVIRONMENT.md`.
 
 ## Next task
 
-Stopped after stages 07–09, as requested. Await the user's next instruction before stage 10
-(Telegram scanning). Live and visual gates remain pending; do not mark them passed without
-credentials, the supplied design and evidence.
+Continue through stages 10–14, as explicitly authorized. Every stage receives a local commit.
+Live and visual gates remain pending until credentials, the design and evidence exist.
 
 Continue directly on `main`, as explicitly requested by the human. No push.
 Website styling and spider animation wait for the user's `design.md` / `desigh.md`.

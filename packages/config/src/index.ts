@@ -13,6 +13,10 @@ const schema = z.object({
   SOLANA_RPC_URL: optionalUrl,
   SOLANA_FALLBACK_RPC_URL: optionalUrl,
   TELEGRAM_BOT_TOKEN: optional,
+  TELEGRAM_MODE: z.enum(['polling', 'webhook']).default('polling'),
+  TELEGRAM_WEBHOOK_URL: optionalUrl,
+  TELEGRAM_WEBHOOK_SECRET: optional,
+  TELEGRAM_PORT: int(3002, 1, 65535),
   API_HOST: z.string().default('127.0.0.1'),
   API_PORT: int(3001, 1, 65535),
   WEB_ORIGIN: z.url().default('http://localhost:5173'),
@@ -45,6 +49,14 @@ export function parseConfig(env: Record<string, string | undefined>): Config {
     );
   }
   const value = result.data;
+  if (
+    value.TELEGRAM_MODE === 'webhook' &&
+    (!value.TELEGRAM_WEBHOOK_URL ||
+      new URL(value.TELEGRAM_WEBHOOK_URL).protocol !== 'https:' ||
+      !value.TELEGRAM_WEBHOOK_SECRET ||
+      !/^[A-Za-z0-9_-]{32,256}$/.test(value.TELEGRAM_WEBHOOK_SECRET))
+  )
+    throw new Error('Webhook requires HTTPS URL and a 32–256 character secret');
   if (value.NODE_ENV === 'production') {
     for (const key of ['WEB_ORIGIN', 'PUBLIC_WEB_URL'] as const) {
       if (new URL(value[key]).protocol !== 'https:')

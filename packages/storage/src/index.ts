@@ -2,7 +2,7 @@ import pg from 'pg';
 import { Redis } from 'ioredis';
 import type { Config } from '@crawlspider/config';
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 export function createStorage(
   config: Pick<Config, 'DATABASE_URL' | 'REDIS_URL'>,
   database?: pg.Pool,
@@ -59,3 +59,4 @@ export function createStorage(
 export type Storage = ReturnType<typeof createStorage>;
 export * from './budget.js';
 export * from './scans.js';
+export * from './telegram.js';
