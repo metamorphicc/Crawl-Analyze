@@ -4,7 +4,14 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
-**Stage 03: implemented, local checks pass; mainnet acceptance pending credentials.**
+**Stage 04: implemented and locally verified; mainnet golden corpus pending credentials.**
+
+Stage 03 checkpoint: `08cae90`. Stage 04 subject:
+`feat: decode Pump trades and token flows across migrations`.
+63 unit tests, strict typecheck and full workspace/web build pass. IDL tuple/version decoding,
+signed reserves, CPI/ALT flows, missing owner/receipt safeguards and verified market state are
+implemented. See `docs/STAGE_04.md` and `docs/VENUE_CAPABILITIES.md`. No live corpus result claimed.
+The user's current scope is stages 04–06 only, then stop; do not begin stage 07.
 
 Current branch: `main`. Stage 00 is committed as `35d63d6`; workflow steering as `1e505f2`.
 Stage 01 checkpoint: `4e3ee68`.
@@ -98,8 +105,8 @@ the actual container references/digests are in `docs/ENVIRONMENT.md`.
 
 ## Next task
 
-Implement **stage 04**: official IDL decoding, inner/versioned transactions, token flows, Pump market
-structure and venue capabilities. Continue independently
+Implement **stage 05**: bounded wallet histories/funding and evidence graph, then stage 06 scoring
+and liquidity scenarios. Stop after the stage 06 local commit. Continue independently
 of the pending live gates; do not mark those gates passed without credentials and evidence.
 
 Continue directly on `main`, as explicitly requested by the human. No push.
