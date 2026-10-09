@@ -4,6 +4,29 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
+**Hybrid hosting configuration: Vercel web + backend on the user's PC.**
+
+The user selected option 1 on 2026-10-09. Root `vercel.json` explicitly deploys only the `web`
+Vite service; the PC retains API, worker, PostgreSQL/Redis and optional polling bot. Browser
+fetch/SSE use the public HTTPS `VITE_API_URL`. No internal Vercel services/bindings are needed.
+Service-specific rewrites cover actual React pages without returning HTML for JS/dev assets.
+The previous uncommitted API-on-Vercel candidate and entrypoint were removed.
+An opt-in proxy setting trusts only the immediate loopback hop and is rejected on a public
+listener, so tunneled visitors keep separate quota buckets. CORS stays exact and credentialed.
+Instructions cover same-site domains/cookies, named Windows tunnel, Vercel import from repository
+root, private local databases, production env, compiled processes and public acceptance checks.
+See `docs/VERCEL_PC.md` and `docs/verification/HYBRID_HOSTING.md`.
+
+Verification: typecheck and all 163 unit tests pass, as do all 11 browser journeys and the full
+build. `vercel dev -L` detects only web and serves all six current React entry paths and scripts.
+The service-root cloud-style web build succeeds with an explicit external HTTPS API; eight
+missing/invalid settings fail before build without printing values. Generated assets contain
+the selected public origin, no checked local credential values and no source maps. Production
+dependency audit reports zero findings. Full formatting and diff checks are recorded with the
+local commit. No user `.env` changes, cloud project linking, real tunnel, push or deployment.
+Temporary Vercel test processes are stopped; existing user services stay running. Domains and
+end-to-end public SSE/cookies are still unverified; stages 13 and 14 remain pending in full.
+
 **Data-ready arrival and progressive deep-scan findings.**
 
 Job acceptance does not move the page. A guide points toward findings below; the first matching

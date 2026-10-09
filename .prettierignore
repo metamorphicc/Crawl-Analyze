@@ -7,6 +7,7 @@ coverage
 playwright-report
 test-results
 .sites-runtime
+.vercel
 packages/providers/idl/pump.json
 packages/providers/idl/pump_amm.json
 packages/providers/idl/pump_fees.json

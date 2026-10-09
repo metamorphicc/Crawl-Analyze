@@ -66,6 +66,21 @@ Docker Compose supplies local databases, and later supplies all production proce
 Local queues/caches, database credentials, RPC secrets and bot tokens are ignored by Git. Database
 ports are loopback-only. Production uses separate secrets and explicitly sized service limits.
 
+## Public beta topology (user selection, 2026-10-09)
+
+The user selected Vercel for the static website only. Fastify API, BullMQ worker, PostgreSQL and
+Redis remain on the user's Windows PC. A named Cloudflare HTTPS tunnel publishes the loopback API;
+databases remain private. Optional Telegram runs locally in polling mode. This replaces the
+uncommitted web+API Vercel candidate, without changing durable analysis/persistence semantics.
+
+The repository-root Vercel Services configuration explicitly defines one public service `web`
+on `/(.*)`. Browser fetch/SSE use build-time `VITE_API_URL`, pointing at `https://api.<domain>`.
+There are no internal Vercel services or caller-side bindings. The actual API paths stay `/v1/...`.
+Use HTTPS frontend/API hostnames on the same registrable domain to retain current SameSite=Lax
+session behavior. Only opt-in, immediate-loopback proxy trust is permitted for visitor quotas.
+Configuration and instructions are local preparation, not proof of a cloud/tunnel deployment.
+The PC must stay on; stage 13 full operations and stage 14 public/live acceptance remain pending.
+
 ## Result semantics
 
 - First result: a bounded preview that can say pending/partial.

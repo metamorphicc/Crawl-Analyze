@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
+import { apiBase } from './api-base.js';
 export const apiUrl = (path: string) =>
-  `${(import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '')}${path}`;
+  `${apiBase(import.meta.env.VITE_API_URL, import.meta.env.DEV)}${path}`;
 const messages: Record<string, string> = {
   PROVIDER_NOT_CONFIGURED: 'Scan data sources are not connected yet.',
   INVALID_INPUT: 'Enter a Solana mint or a supported link.',

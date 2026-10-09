@@ -11,13 +11,15 @@ evidence/export/terminal journeys, with a [CrawlScan-inspired visual and origina
 [Early buyers and changes](docs/STAGE_08.md) and [queue/API recovery](docs/STAGE_07.md) use the
 same immutable reports. Telegram interaction, linked watchlists, alerts and forward-observation
 tooling are implemented. Mainnet acceptance needs locally configured provider credentials.
-Stages 13–14 remain paused; the latest visual changes have not been validated, at the user's request.
+Stages 13–14 remain pending. Recent scan/UI repairs are verified locally; public release acceptance
+and complete production operations are still pending.
 
 - [Complete build plan](docs/BUILD_PLAN.md)
 - [Architecture decisions](docs/DECISIONS.md)
 - [Current status and next task](docs/STATUS.md)
 - [Verified provider research](docs/SOURCES.md)
 - [Environment setup](docs/ENVIRONMENT.md)
+- [Public beta: Vercel website + backend on your PC](docs/VERCEL_PC.md)
 
 ## Local prerequisites
 

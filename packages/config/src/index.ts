@@ -26,6 +26,10 @@ const schema = z.object({
   TELEGRAM_PORT: int(3002, 1, 65535),
   API_HOST: z.string().default('127.0.0.1'),
   API_PORT: int(3001, 1, 65535),
+  API_TRUST_LOOPBACK_PROXY: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
   WEB_ORIGIN: z.url().default('http://localhost:5173'),
   PUBLIC_WEB_URL: z.url().default('http://localhost:5173'),
   SCAN_CONCURRENCY: int(4, 1, 32),
@@ -56,6 +60,8 @@ export function parseConfig(env: Record<string, string | undefined>): Config {
     );
   }
   const value = result.data;
+  if (value.API_TRUST_LOOPBACK_PROXY && !['127.0.0.1', '::1'].includes(value.API_HOST))
+    throw new Error('API_TRUST_LOOPBACK_PROXY requires API_HOST to be loopback');
   if (
     value.TELEGRAM_MODE === 'webhook' &&
     (!value.TELEGRAM_WEBHOOK_URL ||

@@ -24,4 +24,19 @@ describe('configuration', () => {
   it('rejects cleartext production origins', () => {
     expect(() => parseConfig({ ...env, NODE_ENV: 'production' })).toThrow('HTTPS');
   });
+  it('only enables local proxy trust explicitly on a loopback listener', () => {
+    expect(parseConfig(env).API_TRUST_LOOPBACK_PROXY).toBe(false);
+    expect(
+      parseConfig({ ...env, API_TRUST_LOOPBACK_PROXY: 'false' }).API_TRUST_LOOPBACK_PROXY,
+    ).toBe(false);
+    expect(parseConfig({ ...env, API_TRUST_LOOPBACK_PROXY: 'true' }).API_TRUST_LOOPBACK_PROXY).toBe(
+      true,
+    );
+    expect(() => parseConfig({ ...env, API_TRUST_LOOPBACK_PROXY: 'yes' })).toThrow(
+      'API_TRUST_LOOPBACK_PROXY',
+    );
+    expect(() =>
+      parseConfig({ ...env, API_HOST: '0.0.0.0', API_TRUST_LOOPBACK_PROXY: 'true' }),
+    ).toThrow('loopback');
+  });
 });

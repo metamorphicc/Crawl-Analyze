@@ -21,7 +21,10 @@ export function createApp(config: Config, storage: Storage) {
     bodyLimit: 4096,
     requestTimeout: 10000,
     logController: new LogController({ disableRequestLogging: true }),
-    trustProxy: false,
+    // cloudflared runs on this host; trust only the immediate loopback hop, never arbitrary peers.
+    trustProxy: config.API_TRUST_LOOPBACK_PROXY
+      ? (address, hop) => hop === 0 && ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(address)
+      : false,
   });
   app.register(helmet);
   app.register(cors, {
