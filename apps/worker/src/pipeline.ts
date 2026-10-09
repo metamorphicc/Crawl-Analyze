@@ -239,7 +239,22 @@ export async function runScan(
   const candidates = [
     ...new Map([...prior, ...selection.candidates].map((h) => [h.owner, h])).values(),
   ].slice(0, config.MAX_HISTORY_OWNERS);
-  const collected = await collectWalletHistories(candidates, rpc, signal, options, read);
+  let lastHistoryUpdate = 0;
+  const publishHistories = async (current: WalletHistory[]) => {
+    histories = current;
+    signals = histories.map((h) => summarizeWallet(h, lease.mint, null));
+    // Keep partial launch/funding evidence explicit; updates must not grant a final verdict.
+    if (Date.now() - lastHistoryUpdate >= 1500) {
+      await progress(
+        'wallet-history',
+        makeReport(['WALLET_HISTORY_IN_PROGRESS', 'FUNDING_NOT_READ']),
+      );
+      lastHistoryUpdate = Date.now();
+    }
+  };
+  const collected = await collectWalletHistories(candidates, rpc, signal, options, read, {
+    onUpdate: publishHistories,
+  });
   histories = collected.histories;
   const extras = counterpartyCandidates(
     holders,
@@ -247,7 +262,11 @@ export async function runScan(
     new Set(histories.map((h) => h.owner)),
     Math.min(20, config.MAX_HISTORY_OWNERS - histories.length),
   );
-  histories.push(...(await collectWalletHistories(extras, rpc, signal, options, read)).histories);
+  const primaryHistories = histories;
+  const extraHistories = await collectWalletHistories(extras, rpc, signal, options, read, {
+    onUpdate: (current) => publishHistories([...primaryHistories, ...current]),
+  });
+  histories = [...primaryHistories, ...extraHistories.histories];
   const launch = analyzeEarlyBuyers({
     mint: lease.mint,
     transactions: launchWindow.transactions,
@@ -280,6 +299,7 @@ export async function runScan(
     else value.earlyObservedEntry = buyer.early;
     return value;
   });
+  await progress('wallet-history', makeReport(['FUNDING_NOT_READ']));
   await progress('funding');
   funding = await traceFunding(
     histories,

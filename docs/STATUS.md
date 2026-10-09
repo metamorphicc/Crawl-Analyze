@@ -4,6 +4,25 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
+**Data-ready arrival and progressive deep-scan findings.**
+
+Job acceptance does not move the page. A guide points toward findings below; the first matching
+report triggers one scroll/focus transition. Later snapshots and completion preserve the reader's
+focus and report component state. The verdict shows the actual holder-snapshot timestamp, number
+of wallet histories read and prominent explanations for withheld scores, including unsupported
+Token-2022 semantics and missing verified market/history. No established hypothesis is described
+as a measured zero-control result.
+Wallet history collection now uses at most four concurrent reads, a shared receipt cache and the
+unchanged shared RPC budget; completed histories publish qualified incremental reports. On the
+same live mint the first snapshot took 2.6s including queue, and deep scanning still took about
+120s under the configured 5 requests/s and deadline. It returned 16/17 history reads, 462 decoded
+receipts and a truthful partial verdict. This is feedback/coverage improvement, not proof of a
+shorter complete scan. Token-2022 extension support and this mint's unsupported chart/sell venue
+remain pending. Only the idle worker was restarted to load the change. No push/deployment.
+Verification: typecheck, 158 unit tests, 21 integration tests (one successful full retry after
+an outcome-scheduler timing/contention failure), and all 11 browser journeys pass. Formatting and
+diff checks and the full production build pass. See `docs/SCAN_LATENCY.md` for measured timings and limits.
+
 **Verified repair of scan-page failure after checkpoint `bab4972`.**
 
 The user re-enabled checks. Reproduced localhost/127.0.0.1 CORS mismatch and Vite's 504 optimized

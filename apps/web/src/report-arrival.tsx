@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useSpiderActivity } from './spiders.js';
 
-// Arrive once per scan milestone; final arrival corrects the collapsed live scene's layout.
+// Arrive once when actual findings load, never on acceptance or subsequent report updates.
 export function ReportArrival({
   ready,
   arrivalKey,

@@ -212,8 +212,14 @@ test('live chart loads without a gate, scan scrolls to results, and pause contro
     if (request.url().includes('/market')) requests.push(request.url());
   });
   await scan(page, key(7));
-  await expect(page.getByRole('heading', { name: 'Market chart', exact: true })).toBeVisible();
+  await expect(page.getByText('Your analysis will appear below', { exact: true })).toBeVisible();
+  await expect(page.getByRole('article', { name: 'Analysis report', exact: true })).toHaveCount(0);
+  await expect(page.locator('#scan-results')).not.toBeFocused();
+  expect(await page.evaluate(() => window.scrollY)).toBeLessThan(50);
   await expect.poll(() => requests.length).toBeGreaterThan(0);
+  await expect(page.getByRole('article', { name: 'Analysis report', exact: true })).toBeVisible();
+  await expect(page.getByText('Findings are updating', { exact: true })).toBeVisible();
+  await expect(page.locator('.verdict-observed time')).toHaveAttribute('datetime', /T/);
   await expect
     .poll(() =>
       page
@@ -225,14 +231,11 @@ test('live chart loads without a gate, scan scrolls to results, and pause contro
   await expect(page.getByRole('button', { name: 'Load candles', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Pause|Resume/ })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Market chart', exact: true })).toHaveCount(1);
+  const wallets = page.getByRole('link', { name: '02 Wallets', exact: true });
+  await wallets.focus();
   await expect(page.getByRole('link', { name: 'Permanent report link' })).toBeVisible();
-  await expect
-    .poll(() =>
-      page
-        .locator('#scan-results')
-        .evaluate((element) => Math.abs(Math.round(element.getBoundingClientRect().top) - 24)),
-    )
-    .toBeLessThan(35);
+  await expect(wallets).toBeFocused();
+  await expect(page.getByText('Findings are updating', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Market chart', exact: true })).toHaveCount(1);
 });
 

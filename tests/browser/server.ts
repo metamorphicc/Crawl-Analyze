@@ -105,8 +105,11 @@ const runner = startRunner(config, storage, {
     preview.mode = 'preview';
     preview.snapshot.quality.status = 'partial';
     preview.snapshot.quality.reasons = ['SYNTHETIC_PREVIEW'];
+    if (lease.mint === key(7)) await delay(2000, undefined, { signal });
     await progress('preview', reportSchema.parse(preview));
-    await delay(lease.mint === key(3) ? 7000 : 1500, undefined, { signal });
+    await delay(lease.mint === key(3) ? 7000 : lease.mint === key(7) ? 4000 : 1500, undefined, {
+      signal,
+    });
     if (lease.mint === key(4)) {
       r.snapshot.quality.status = 'partial';
       r.snapshot.enumerationComplete = false;

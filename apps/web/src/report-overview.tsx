@@ -1,5 +1,5 @@
 import type { AnalysisReport } from '@crawlspider/contracts';
-import { percent } from './format.js';
+import { date, percent } from './format.js';
 import { shortAddress } from './wallet-view.js';
 import { ArrowUpRight, ShieldAlert, ShieldQuestion } from 'lucide-react';
 
@@ -34,7 +34,13 @@ export function ReportMetrics({ report: r }: { report: AnalysisReport }) {
     </dl>
   );
 }
-export function ReportOverview({ report: r }: { report: AnalysisReport }) {
+export function ReportOverview({
+  report: r,
+  provisional = false,
+}: {
+  report: AnalysisReport;
+  provisional?: boolean;
+}) {
   const score = r.risk.riskScore,
     metrics = r.risk.metrics;
   const fullSell = r.scenarios.scenarios.find((s) => s.fractionBps === 10000);
@@ -57,15 +63,73 @@ export function ReportOverview({ report: r }: { report: AnalysisReport }) {
         <span style={{ width: `${score ?? 0}%` }} />
       </div>
       <strong className="verdict-label">
-        {score === null ? 'Insufficient data' : `${r.risk.classification} risk`}
+        {provisional
+          ? 'Analysis in progress'
+          : score === null
+            ? 'Insufficient data'
+            : `${r.risk.classification} risk`}
       </strong>
+      <p className="verdict-observed">
+        Snapshot:{' '}
+        <time dateTime={r.snapshot.quality.observedAt} title={r.snapshot.quality.observedAt}>
+          {date(r.snapshot.quality.observedAt)}
+        </time>
+      </p>
+      {(score === null || provisional) && (
+        <div className="verdict-data-status">
+          <strong>{provisional ? 'Findings are updating' : 'Why the score is unavailable'}</strong>
+          <p>
+            {r.graph.analyzedOwners.length} of {metrics.ownerCount} indexed wallets have a history
+            read. A read can still contain missing transactions.
+          </p>
+          <ul>
+            {provisional && (
+              <li>
+                Wallet history and relationships are still being collected. These findings are
+                provisional.
+              </li>
+            )}
+            {r.snapshot.quality.reasons.includes(
+              'TOKEN_2022_EXTENSION_SEMANTICS_REQUIRE_REVIEW',
+            ) && (
+              <li>
+                This token uses Token-2022 extensions whose balance and authority semantics are not
+                fully supported yet.
+              </li>
+            )}
+            {r.risk.eligibilityReasons.includes('HOLDER_SNAPSHOT_PARTIAL_STALE_OR_UNRECONCILED') &&
+              !r.snapshot.quality.reasons.includes(
+                'TOKEN_2022_EXTENSION_SEMANTICS_REQUIRE_REVIEW',
+              ) && (
+                <li>
+                  The holder snapshot is qualified; its completeness, freshness or supply
+                  reconciliation does not meet scoring requirements.
+                </li>
+              )}
+            {r.risk.eligibilityReasons.includes('USABLE_HISTORY_BELOW_80_PERCENT') && (
+              <li>Usable transaction history covers less than 80% of the eligible balance.</li>
+            )}
+            {r.risk.eligibilityReasons.includes('OBSERVED_ENTRY_BELOW_80_PERCENT') && (
+              <li>Observed token entries cover less than 80% of the eligible balance.</li>
+            )}
+            {r.risk.eligibilityReasons.includes('SUPPORTED_FRESH_MARKET_UNAVAILABLE') && (
+              <li>No supported, verified fresh market is available for the sell model.</li>
+            )}
+          </ul>
+          <small>
+            Known holder balances remain visible. Missing evidence is not a clean bill of health.
+          </small>
+        </div>
+      )}
       <p className="verdict-explanation">
         Higher means more observed risk. This is a heuristic, not a safety guarantee.
       </p>
       <p>
         {metrics.ownerCount} indexed wallets. Top 10 hold {percent(metrics.top10Bps)} of eligible
-        balance; the largest common-control hypothesis holds {percent(metrics.largestHypothesisBps)}
-        .
+        balance.{' '}
+        {r.graph.controlHypotheses.length
+          ? `The largest observed common-control hypothesis holds ${percent(metrics.largestHypothesisBps)}.`
+          : 'No common-control group has been established from the available evidence.'}
       </p>
       <div className="scenario-highlight">
         <span>Flagged-cohort sell scenario</span>

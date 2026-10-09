@@ -169,14 +169,49 @@ export async function collectWalletHistories(
   signal: AbortSignal,
   options: HistoryOptions,
   read = transactionReader(rpc, signal),
+  collection: {
+    concurrency?: number;
+    onUpdate?: (histories: WalletHistory[]) => Promise<void>;
+  } = {},
 ) {
-  const histories: WalletHistory[] = [];
-  for (const candidate of candidates) {
-    if (signal.aborted) break;
-    histories.push(
-      await readWalletHistory(candidate.owner, candidate.accounts, rpc, signal, options, read),
-    );
-  }
+  const concurrency = collection.concurrency ?? 4;
+  if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 8)
+    throw new Error('Invalid history concurrency');
+  const results: (WalletHistory | undefined)[] = new Array(candidates.length);
+  let next = 0,
+    stopped = false;
+  let updates = Promise.resolve();
+  const completed = () => results.filter((h): h is WalletHistory => h !== undefined);
+  // RPC transport still enforces the shared request budget. Bound outstanding reads and
+  // keep candidate order stable even when a slower wallet finishes after another one.
+  const workers = await Promise.allSettled(
+    Array.from({ length: Math.min(concurrency, candidates.length) }, async () => {
+      try {
+        while (!signal.aborted && !stopped && next < candidates.length) {
+          const index = next++;
+          const candidate = candidates[index]!;
+          results[index] = await readWalletHistory(
+            candidate.owner,
+            candidate.accounts,
+            rpc,
+            signal,
+            options,
+            read,
+          );
+          if (collection.onUpdate && !signal.aborted && !stopped) {
+            updates = updates.then(() => collection.onUpdate!(completed()));
+            await updates;
+          }
+        }
+      } catch (error) {
+        stopped = true;
+        throw error;
+      }
+    }),
+  );
+  const failure = workers.find((worker) => worker.status === 'rejected');
+  if (failure?.status === 'rejected') throw failure.reason;
+  const histories = completed();
   return {
     histories,
     complete: histories.length === candidates.length,

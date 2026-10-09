@@ -102,6 +102,26 @@ export function CrawlStage({
               );
             })}
           </ol>
+          <div className="scan-findings-hint" role="status">
+            <span aria-hidden="true">↓</span>
+            <div>
+              <strong>
+                {report ? 'First findings are ready below' : 'Your analysis will appear below'}
+              </strong>
+              <p>
+                {report
+                  ? `${report.graph.analyzedOwners.length} wallet histories read. ${job?.mode === 'deep' ? 'Deep analysis continues as more evidence arrives.' : 'Saving the snapshot.'}`
+                  : 'Collecting the first snapshot. We will take you to the panel when its data is ready.'}
+              </p>
+              {job?.mode === 'deep' && (
+                <small>
+                  Deep scans read transaction history under the provider request limit. You can
+                  explore the first findings while they run.
+                </small>
+              )}
+            </div>
+            {report && <a href="#scan-results">Explore findings ↓</a>}
+          </div>
           <RelationshipMap mint={mint} report={report} active={job?.state === 'running'} />
           <div className="crawl-stage-bottom">
             <p>

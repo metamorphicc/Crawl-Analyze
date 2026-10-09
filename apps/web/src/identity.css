@@ -484,3 +484,39 @@
     padding: var(--space-lg);
   }
 }
+
+/* Guide the scan without moving focus before findings exist. */
+.scan-findings-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-lg) var(--space-xl);
+  border-bottom: 1px solid var(--color-rule);
+}
+.scan-findings-hint > span {
+  color: var(--color-accent);
+  font-size: 1.75rem;
+}
+.scan-findings-hint > div {
+  flex: 1;
+}
+.scan-findings-hint p {
+  margin-block: var(--space-sm);
+}
+.scan-findings-hint small,
+.verdict-observed {
+  color: var(--color-muted);
+}
+.verdict-data-status {
+  padding-block: var(--space-lg);
+  border-block: 1px solid var(--color-rule);
+}
+.verdict-data-status li {
+  margin-block: var(--space-sm);
+}
+@media (max-width: 540px) {
+  .scan-findings-hint {
+    flex-wrap: wrap;
+    padding: var(--space-lg);
+  }
+}

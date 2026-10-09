@@ -22,9 +22,10 @@ This is an in-place visual substage. The durable services, report semantics and 
   independently of preview/final report availability. Every report also loads its chart by default;
   there is no manual Load candles gate. The live chart polls every 15 seconds while queued/running,
   using the existing query and server cache. Missing prices stay explicitly unavailable.
-- `ReportArrival` moves keyboard focus and scrolls once after the server confirms the matching job.
-  It targets the already-mounted chart/results area, without waiting for deep analysis to finish.
-  A saved-report arrival corrects the collapsed scene once; routine updates do not jump. Hidden
+- `ReportArrival` moves keyboard focus and scrolls once when the matching first report has loaded.
+  Job acceptance alone never scrolls. A visible guide explains that findings appear below; the
+  already-mounted chart needs no click. Subsequent partial/final updates do not take focus again.
+  The report component retains its identity during updates, preserving search/focus. Hidden
   tabs defer the move until visible. Saved-report routes do not force a scan transition.
 - User-requested pause controls are removed from the map and global shell. Stored pause preferences
   are no longer read, so a previously paused browser is not stranded without a Resume button.

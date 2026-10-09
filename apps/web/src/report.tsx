@@ -216,7 +216,7 @@ export function ReportView({
       <div className={`report-findings ${showChart ? '' : 'report-findings-summary'}`}>
         {showChart && <MarketPanel mint={r.identity.mint} />}
         <aside className="verdict-panel" aria-label="Risk verdict">
-          <ReportOverview report={r} />
+          <ReportOverview report={r} provisional={provisional} />
           <div className="verdict-actions">
             {!provisional && (
               <button onClick={() => void share()}>

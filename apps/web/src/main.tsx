@@ -494,13 +494,19 @@ function Live({ id, mint }: { id: string; mint: string }) {
       </CrawlStage>
       {cancelError && <p role="alert">{cancelError}</p>}
       <ReportArrival
-        arrivalKey={`${id}:${job?.reportId && report?.id === job.reportId ? 'saved' : 'live'}`}
-        ready={Boolean(job && job.id === id && job.mint === mint)}
+        arrivalKey={id}
+        ready={Boolean(
+          job &&
+          job.id === id &&
+          job.mint === mint &&
+          report?.jobId === id &&
+          report.identity.mint === mint,
+        )}
       >
         <MarketPanel mint={mint} refresh={!job || ['queued', 'running'].includes(job.state)} />
         {report && (
           <ReportView
-            key={report.id}
+            key={id}
             report={report}
             provisional={report.id !== job?.reportId}
             showChart={false}
