@@ -24,7 +24,7 @@ This is an in-place visual substage. The durable services, report semantics and 
   using the existing query and server cache. Missing prices stay explicitly unavailable.
 - `ReportArrival` moves keyboard focus and scrolls once after the server confirms the matching job.
   It targets the already-mounted chart/results area, without waiting for deep analysis to finish.
-  Preview-to-final updates retain the same destination and do not trigger repeated jumps. Hidden
+  A saved-report arrival corrects the collapsed scene once; routine updates do not jump. Hidden
   tabs defer the move until visible. Saved-report routes do not force a scan transition.
 - User-requested pause controls are removed from the map and global shell. Stored pause preferences
   are no longer read, so a previously paused browser is not stranded without a Resume button.
@@ -39,7 +39,7 @@ This is an in-place visual substage. The durable services, report semantics and 
 
 ## Delivery boundary
 
-The user has disabled checks. No tests, typecheck, browser QA or live-provider requests are run.
-The frontend build generates local serving assets only; it does not establish visual acceptance
-or launch readiness. No servers are started, no push occurs and nothing is deployed.
-Stages 13 and 14 remain pending.
+Checks were disabled during the visual passes, then explicitly re-enabled for the reported scan
+failure. Typecheck, unit/integration/browser checks and the full build now pass for the runtime
+repair, with a real partial preview readback. See `docs/SCAN_RUNTIME_FIX.md` for exact scope and
+remaining provider/chart limits. No push or deployment. Stages 13 and 14 remain pending.

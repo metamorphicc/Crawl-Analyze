@@ -40,7 +40,7 @@
 - Public scans are usable without Telegram login. Telegram identity is required only for persistent watchlists/preferences.
 - Verify real behavior, not implementation-shaped unit tests. Use deterministic fixtures for parser/math invariants, integration tests for DB/queues, and browser tests for user journeys.
 - A failed provider response becomes unknown/partial; it never becomes zero holders, zero previous activity, or a false sale.
-- Use Hallmark for website visual work. Preserve the product's own brand and analytical semantics while applying the authorized reference direction. Respect the user's instruction not to run checks; record the resulting validation gap honestly.
+- Use Hallmark for website visual work. Preserve the product's own brand and analytical semantics while applying the authorized reference direction. The user re-enabled checks on 2026-10-09 to diagnose scanning failures; run appropriate checks and record actual results, keeping prior validation gaps honest.
 - Frontend is static React/Vite. Hosting may serve the built frontend; long-lived workers, PostgreSQL and Redis run outside edge isolates. No hosting registration or deployment is part of this stage.
 
 ## Stage completion checklist

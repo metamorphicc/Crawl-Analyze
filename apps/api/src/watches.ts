@@ -5,10 +5,12 @@ import type { Config } from '@crawlspider/config';
 import { PublicError, notificationSettingsSchema, addressSchema } from '@crawlspider/contracts';
 import { WatchStore, type Storage } from '@crawlspider/storage';
 import { parseInput } from '@crawlspider/providers';
+import { allowedWebOrigins } from './web-origin.js';
 
 export function registerWatches(app: FastifyInstance, config: Config, storage: Storage) {
   const store = new WatchStore(storage.pool, config),
-    secure = config.NODE_ENV === 'production';
+    secure = config.NODE_ENV === 'production',
+    origins = allowedWebOrigins(config);
   const sessionName = secure ? '__Host-crawlspider' : 'csp_session',
     flowName = secure ? '__Host-crawlspider-link' : 'csp_link';
   function cookie(request: FastifyRequest, name: string) {
@@ -27,7 +29,7 @@ export function registerWatches(app: FastifyInstance, config: Config, storage: S
       reply.header('Cache-Control', 'private, no-store');
   });
   function origin(request: FastifyRequest) {
-    if (request.headers.origin !== config.WEB_ORIGIN)
+    if (!request.headers.origin || !origins.includes(request.headers.origin))
       throw new PublicError('ORIGIN_REJECTED', 'Origin rejected', 403);
   }
   async function user(request: FastifyRequest, mutate = false) {

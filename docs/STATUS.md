@@ -4,6 +4,18 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
+**Verified repair of scan-page failure after checkpoint `bab4972`.**
+
+The user re-enabled checks. Reproduced localhost/127.0.0.1 CORS mismatch and Vite's 504 optimized
+chart dependency failure replacing the whole scan page. Fixed the exact development origin policy,
+preoptimized the lazy chart dependency and added a chart-local error boundary. Completion now
+corrects scroll after the live scene collapses. Updated stale English-UI browser journeys and added
+regressions for auto charts, both arrival milestones, absent pause controls and chart failure.
+Passed: typecheck, 155 unit tests, 21 integration tests, 11 browser tests and full build. A real
+preview request saved a partial report; browser readback had no page errors and results at 24px.
+The mint has no verified chart pool; broader mainnet coverage is still pending. Only API restarted;
+worker and databases remain running. No push/deployment. See `docs/SCAN_RUNTIME_FIX.md`.
+
 **Live scan arrival, automatic chart placement and removal of pause controls.**
 
 The live chart is mounted immediately beneath the crawl scene, before the preview or final report,

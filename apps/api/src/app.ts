@@ -13,6 +13,7 @@ import { registerChart } from './chart.js';
 import { registerWatches } from './watches.js';
 import { z } from 'zod';
 import { ScanStore } from '@crawlspider/storage';
+import { allowedWebOrigins } from './web-origin.js';
 
 export function createApp(config: Config, storage: Storage) {
   const app = Fastify({
@@ -24,7 +25,7 @@ export function createApp(config: Config, storage: Storage) {
   });
   app.register(helmet);
   app.register(cors, {
-    origin: config.WEB_ORIGIN,
+    origin: allowedWebOrigins(config),
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   });

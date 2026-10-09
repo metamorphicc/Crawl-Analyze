@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useSpiderActivity } from './spiders.js';
 
-// The chart/results destination exists as soon as the scan starts, not only at completion.
+// Arrive once per scan milestone; final arrival corrects the collapsed live scene's layout.
 export function ReportArrival({
   ready,
   arrivalKey,
