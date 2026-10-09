@@ -4,7 +4,14 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
-**Stage 07: implemented and locally verified; live provider acceptance remains pending.**
+**Stage 08: implemented and locally verified; live provider acceptance remains pending.**
+
+Stage 07 checkpoint: `49f50bf`. Stage 08 subject:
+`feat: track early buyers and actual holder position changes`.
+136 unit tests and ten real PostgreSQL/Redis integration tests pass. Verified launch observations,
+RPC transaction order, bounded first-buyer coverage, old-owner position reads, interval-aware
+transfer/trade/burn/mint/freeze/delegation changes and atomic comparison persistence are implemented.
+See `docs/STAGE_08.md`. Continue stage 09, then stop; visual acceptance is deferred.
 
 Stage 06 checkpoint: `9dd42b7`. Stage 07 subject:
 `feat: run cancellable scan jobs with durable live events`.
@@ -130,7 +137,7 @@ the actual container references/digests are in `docs/ENVIRONMENT.md`.
 
 ## Next task
 
-Implement stages 08–09 with a separate local commit for each, then stop. Live gates remain
+Implement stage 09 with a separate local commit, then stop. Live gates remain
 pending; do not mark them passed without credentials and evidence.
 
 Continue directly on `main`, as explicitly requested by the human. No push.

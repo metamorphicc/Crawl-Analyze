@@ -10,3 +10,4 @@ export * from './transactions.js';
 export * from './markets.js';
 export * from './history.js';
 export * from './funding.js';
+export * from './positions.js';

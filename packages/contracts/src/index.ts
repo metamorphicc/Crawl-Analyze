@@ -367,6 +367,9 @@ export const transactionSchema = z.object({
   events: z.array(z.object({ program: addressSchema, decoded: decodedSchema })),
 });
 export const reportSchema = z.object({
+  earlyBuyers: z.lazy(() => earlyBuyersSchema).optional(),
+  changes: z.lazy(() => positionComparisonSchema).optional(),
+  targetedBalances: z.array(z.lazy(() => targetedBalanceSchema)).optional(),
   id: z.uuid(),
   jobId: z.uuid(),
   contractVersion: z.literal(CONTRACT_VERSION),
@@ -403,6 +406,91 @@ export const jobDetailsSchema = jobSchema.extend({
   preview: reportSchema.nullable(),
 });
 export type JobDetails = z.infer<typeof jobDetailsSchema>;
+export const launchSchema = z.object({
+  signature: z.string(),
+  slot: rawAmountSchema,
+  instruction: z.string(),
+  program: addressSchema,
+});
+export const earlyBuyersSchema = z.object({
+  status: z.enum(['complete', 'partial', 'unavailable']),
+  launch: launchSchema.nullable(),
+  observedAt: z.iso.datetime(),
+  reasons: z.array(z.string()),
+  coverage: historyCoverageSchema.nullable(),
+  buyers: z.array(
+    z.object({
+      owner: addressSchema,
+      signature: z.string(),
+      slot: rawAmountSchema,
+      instruction: z.string(),
+      transactionOrder: z.number().int().nonnegative().nullable(),
+      amount: rawAmountSchema.nullable(),
+      currentBalance: rawAmountSchema.nullable(),
+      early: z.boolean().nullable(),
+      entryClaim: z.enum([
+        'first-observed-buy-in-covered-window',
+        'earliest-observed-slot-candidate',
+      ]),
+    }),
+  ),
+});
+export type EarlyBuyers = z.infer<typeof earlyBuyersSchema>;
+export const positionComparisonSchema = z.object({
+  previousReportId: z.uuid().nullable(),
+  currentReportId: z.uuid(),
+  comparable: z.boolean(),
+  reasons: z.array(z.string()),
+  positions: z.array(
+    z.object({
+      owner: addressSchema,
+      before: rawAmountSchema,
+      after: rawAmountSchema,
+      delta: z.string().regex(/^-?(0|[1-9]\d*)$/),
+      unexplainedDelta: z.string().regex(/^-?(0|[1-9]\d*)$/),
+    }),
+  ),
+  movements: z.array(
+    z.object({
+      id: z.string(),
+      owner: addressSchema,
+      counterparty: addressSchema.nullable(),
+      kind: z.enum([
+        'buy',
+        'sell',
+        'transfer',
+        'self-transfer',
+        'burn',
+        'mint',
+        'freeze-change',
+        'delegation-change',
+        'trade-observed',
+      ]),
+      amount: rawAmountSchema.nullable(),
+      signature: z.string().nullable(),
+      slot: rawAmountSchema.nullable(),
+      instruction: z.string().nullable(),
+      controlHypothesis: z.string().nullable(),
+      identityProven: z.literal(false),
+      explanation: z.string(),
+    }),
+  ),
+});
+export type PositionComparison = z.infer<typeof positionComparisonSchema>;
+export const targetedBalanceSchema = z.object({
+  owner: addressSchema,
+  amount: rawAmountSchema.nullable(),
+  slot: rawAmountSchema.nullable(),
+  observedAt: z.iso.datetime(),
+  status: z.enum(['complete', 'unavailable']),
+  reasons: z.array(z.string()),
+});
+export const enrichedReportSchema = reportSchema.extend({
+  earlyBuyers: earlyBuyersSchema.optional(),
+  changes: positionComparisonSchema.optional(),
+  targetedBalances: z.array(targetedBalanceSchema).optional(),
+});
+export type EnrichedReport = z.infer<typeof enrichedReportSchema>;
 export const recentReportsSchema = z.array(
   z.object({
     id: z.uuid(),
@@ -413,6 +501,7 @@ export const recentReportsSchema = z.array(
   }),
 );
 export * from './intelligence.js';
+export * from './trades.js';
 export class PublicError extends Error {
   constructor(
     public readonly code: string,

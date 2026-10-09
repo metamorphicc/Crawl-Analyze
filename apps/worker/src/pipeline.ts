@@ -11,7 +11,7 @@ import {
   type FundingTrace,
   type WalletLabel,
 } from '@crawlspider/contracts';
-import { sharedProviderBudget, type Storage, type Lease } from '@crawlspider/storage';
+import { sharedProviderBudget, ScanStore, type Storage, type Lease } from '@crawlspider/storage';
 import {
   RpcClient,
   resolveInput,
@@ -23,6 +23,9 @@ import {
   readWalletHistory,
   traceFunding,
   discoverMarkets,
+  readLaunchWindow,
+  readBlockOrders,
+  readOwnerPositions,
 } from '@crawlspider/providers';
 import {
   selectHistoryCandidates,
@@ -32,6 +35,8 @@ import {
   assessRisk,
   buildSellScenarios,
   quoteSell,
+  analyzeEarlyBuyers,
+  comparePositions,
 } from '@crawlspider/analysis';
 export type Progress = (phase: string, preview?: AnalysisReport) => Promise<void>;
 export async function runScan(
@@ -50,6 +55,8 @@ export async function runScan(
     index = new RpcClient(config, fetch, { budget, provider: 'helius' });
   await progress('verify-mint');
   const resolved = await resolveInput(lease.mint, rpc, signal);
+  const previous =
+    lease.mode === 'deep' ? await new ScanStore(storage.pool, config).latest(lease.mint) : null;
   await progress('holders');
   const holderResult = await consistentHolders(resolved.identity, index, rpc, signal, {
     maxPages:
@@ -94,6 +101,9 @@ export async function runScan(
       complete: false,
       reasons: ['FUNDING_NOT_READ'],
     };
+  let launchWindow: WalletHistory | null = null,
+    blockOrders = new Map<string, string[]>(),
+    targetedBalances: NonNullable<AnalysisReport['targetedBalances']> = [];
   const makeReport = (extra: string[]): AnalysisReport => {
     const graph = buildEvidenceGraph({
       mint: lease.mint,
@@ -139,9 +149,22 @@ export async function runScan(
       },
     );
     const transactions = [
-      ...new Map(histories.flatMap((h) => h.transactions).map((t) => [t.signature, t])).values(),
+      ...new Map(
+        [...(launchWindow?.transactions || []), ...histories.flatMap((h) => h.transactions)].map(
+          (t) => [t.signature, t],
+        ),
+      ).values(),
     ];
-    return reportSchema.parse({
+    const earlyBuyers = analyzeEarlyBuyers({
+      mint: lease.mint,
+      transactions,
+      coverage: launchWindow?.coverage || null,
+      holders,
+      holdersComplete: holderResult.snapshot.enumerationComplete && quality.status === 'complete',
+      observedAt,
+      blockOrders,
+    });
+    const report = reportSchema.parse({
       id: randomUUID(),
       jobId: lease.id,
       contractVersion: CONTRACT_VERSION,
@@ -161,6 +184,8 @@ export async function runScan(
       scenarios,
       signals,
       transactions: transactions.slice(0, 500),
+      earlyBuyers,
+      targetedBalances,
       limitations: [
         ...new Set([
           ...extra,
@@ -171,19 +196,46 @@ export async function runScan(
         ]),
       ],
     });
+    report.changes = comparePositions(previous, report);
+    return reportSchema.parse(report);
   };
   const preview = makeReport(['WALLET_HISTORY_NOT_READ', 'LAUNCH_HISTORY_NOT_READ']);
   await progress('preview', preview);
   if (lease.mode === 'preview' || signal.aborted) return preview;
+  const read = transactionReader(rpc, signal);
+  await progress('launch-history');
+  launchWindow = await readLaunchWindow(lease.mint, rpc, signal, read);
+  const orderSlots = launchWindow.transactions
+    .filter((t) => !t.failed)
+    .map((t) => t.slot)
+    .sort((a, b) => (BigInt(a) < BigInt(b) ? -1 : BigInt(a) > BigInt(b) ? 1 : 0));
+  blockOrders = await readBlockOrders(orderSlots, rpc, signal);
+  const oldOwners = [
+    ...new Set([
+      ...(previous?.risk.metrics.flaggedOwners || []),
+      ...(previous?.earlyBuyers?.buyers.map((b) => b.owner) || []),
+    ]),
+  ].slice(0, 100);
+  await progress('old-owner-positions');
+  targetedBalances = await readOwnerPositions(oldOwners, lease.mint, rpc, signal);
   await progress('wallet-history');
   const selection = selectHistoryCandidates(holders, {
     maxOwners: config.MAX_HISTORY_OWNERS,
     minOwners: 25,
     targetSupplyBps: 9500,
   });
-  const options = { maxPages: 2, pageSize: 50, maxTransactions: 40, maxAccounts: 3 },
-    read = transactionReader(rpc, signal);
-  const collected = await collectWalletHistories(selection.candidates, rpc, signal, options, read);
+  const options = { maxPages: 2, pageSize: 50, maxTransactions: 40, maxAccounts: 3 };
+  const prior = oldOwners.slice(0, Math.min(25, config.MAX_HISTORY_OWNERS)).map((owner) => ({
+    owner,
+    accounts:
+      holders.find((h) => h.owner === owner)?.accounts ||
+      previous?.snapshot.holders.find((h) => h.owner === owner)?.accounts ||
+      [],
+  }));
+  const candidates = [
+    ...new Map([...prior, ...selection.candidates].map((h) => [h.owner, h])).values(),
+  ].slice(0, config.MAX_HISTORY_OWNERS);
+  const collected = await collectWalletHistories(candidates, rpc, signal, options, read);
   histories = collected.histories;
   const extras = counterpartyCandidates(
     holders,
@@ -192,7 +244,38 @@ export async function runScan(
     Math.min(20, config.MAX_HISTORY_OWNERS - histories.length),
   );
   histories.push(...(await collectWalletHistories(extras, rpc, signal, options, read)).histories);
-  signals = histories.map((h) => summarizeWallet(h, lease.mint));
+  const launch = analyzeEarlyBuyers({
+    mint: lease.mint,
+    transactions: launchWindow.transactions,
+    coverage: launchWindow.coverage,
+    holders,
+    holdersComplete: quality.status === 'complete',
+    observedAt,
+    blockOrders,
+  }).launch;
+  const early = analyzeEarlyBuyers({
+    mint: lease.mint,
+    transactions: [...launchWindow.transactions, ...histories.flatMap((h) => h.transactions)],
+    coverage: launchWindow.coverage,
+    holders,
+    holdersComplete: quality.status === 'complete',
+    observedAt,
+    blockOrders,
+  });
+  signals = histories.map((h) => {
+    const value = summarizeWallet(h, lease.mint, launch);
+    const buyer = early.buyers.find(
+      (b) => b.owner === h.owner && b.signature === value.entry?.signature,
+    );
+    if (
+      !buyer ||
+      buyer.early === null ||
+      (buyer.early === false && value.earlyObservedEntry === null)
+    )
+      value.earlyObservedEntry = null;
+    else value.earlyObservedEntry = buyer.early;
+    return value;
+  });
   await progress('funding');
   funding = await traceFunding(
     histories,
@@ -210,7 +293,8 @@ export async function runScan(
   );
   await progress('analysis');
   return makeReport([
-    'LAUNCH_HISTORY_NOT_READ',
+    ...(launch ? [] : ['VERIFIED_LAUNCH_NOT_IN_WINDOW']),
+    ...(oldOwners.length > 25 ? ['OLD_OWNER_HISTORY_CAP'] : []),
     ...selection.reasons,
     ...collected.reasons,
     ...(signal.aborted ? ['DEEP_DEADLINE_PARTIAL'] : []),

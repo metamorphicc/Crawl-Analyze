@@ -2,7 +2,7 @@ import pg from 'pg';
 import { Redis } from 'ioredis';
 import type { Config } from '@crawlspider/config';
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 export function createStorage(
   config: Pick<Config, 'DATABASE_URL' | 'REDIS_URL'>,
   database?: pg.Pool,

@@ -264,6 +264,40 @@ export class ScanStore {
           body.mode,
         ],
       );
+      await c.query(
+        `INSERT INTO report_positions(report_id,owner,amount,excluded_amount,body) SELECT $1,p->>'owner',(p->>'amount')::numeric,(p->>'excludedAmount')::numeric,p FROM jsonb_array_elements($2::jsonb) p`,
+        [body.id, JSON.stringify(body.snapshot.holders)],
+      );
+      await c.query(
+        `INSERT INTO chain_transactions(signature,parser_version,slot,body) SELECT p->>'signature',p->>'parserVersion',(p->>'slot')::numeric,p FROM jsonb_array_elements($1::jsonb) p ON CONFLICT DO NOTHING`,
+        [JSON.stringify(body.transactions)],
+      );
+      if (body.earlyBuyers?.launch)
+        await c.query(
+          'INSERT INTO token_launches(mint,parser_version,signature,slot,body) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING',
+          [
+            body.identity.mint,
+            body.parserVersion,
+            body.earlyBuyers.launch.signature,
+            body.earlyBuyers.launch.slot,
+            JSON.stringify(body.earlyBuyers.launch),
+          ],
+        );
+      if (body.changes) {
+        if (body.changes.currentReportId !== body.id)
+          throw new Error('Comparison does not match report');
+        if (body.changes.previousReportId) {
+          const prior = await c.query('SELECT mint FROM reports WHERE id=$1', [
+            body.changes.previousReportId,
+          ]);
+          if (prior.rows[0]?.mint !== body.identity.mint)
+            throw new Error('Comparison crosses token boundary');
+        }
+        await c.query(
+          'INSERT INTO report_comparisons(report_id,previous_report_id,body) VALUES($1,$2,$3)',
+          [body.id, body.changes.previousReportId, JSON.stringify(body.changes)],
+        );
+      }
       const state =
         body.limitations.length ||
         body.snapshot.quality.status !== 'complete' ||

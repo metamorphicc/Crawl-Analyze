@@ -10,6 +10,7 @@ import { startRunner, executeLease } from '../../apps/worker/src/runner.js';
 import { createApp } from '../../apps/api/src/app.js';
 import { fixtureReport } from '../fixtures/report.js';
 import { key } from '../fixtures/analytics.js';
+import { comparePositions } from '@crawlspider/analysis';
 async function environment() {
   const config = {
     ...loadConfig(),
@@ -54,6 +55,36 @@ async function waitUntil(check: () => Promise<boolean>) {
   throw new Error('Timed out waiting for fixture worker');
 }
 describe('durable scans on real PostgreSQL/Redis', () => {
+  it('commits successive positions and comparisons atomically with report completion', async () => {
+    const e = await environment();
+    try {
+      const a = await e.store.admit(key(1), 'deep', 'a'),
+        leaseA = (await e.store.claim(a.job.id))!;
+      const before = fixtureReport(leaseA.id);
+      before.changes = comparePositions(null, before);
+      await e.store.finish(leaseA, before);
+      const b = await e.store.admit(key(1), 'deep', 'b', 'deep', true),
+        leaseB = (await e.store.claim(b.job.id))!;
+      const after = fixtureReport(leaseB.id, 'deep', key(1), '2026-10-09T00:00:30.000Z');
+      after.snapshot.quality.minSlot = after.snapshot.quality.maxSlot = '445186200';
+      after.changes = comparePositions(before, after);
+      await e.store.finish(leaseB, after);
+      expect(
+        (await e.storage.pool.query('SELECT count(*) FROM report_positions')).rows[0].count,
+      ).toBe('40');
+      expect(
+        (
+          await e.storage.pool.query(
+            'SELECT previous_report_id FROM report_comparisons WHERE report_id=$1',
+            [after.id],
+          )
+        ).rows[0].previous_report_id,
+      ).toBe(before.id);
+      expect((await e.store.report(after.id)).changes!.comparable).toBe(true);
+    } finally {
+      await e.close();
+    }
+  });
   it('reserves capacity for interactive and monitor lanes across concurrent claims', async () => {
     const e = await environment();
     try {

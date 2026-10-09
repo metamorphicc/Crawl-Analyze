@@ -4,3 +4,5 @@ export * from './graph.js';
 export * from './fees.js';
 export * from './scenarios.js';
 export * from './scoring.js';
+export * from './early.js';
+export * from './changes.js';

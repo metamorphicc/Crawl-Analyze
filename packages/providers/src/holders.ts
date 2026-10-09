@@ -210,7 +210,9 @@ export function aggregateOwners(
     if (row.frozen) value.frozen += amount;
     if (row.frozen === undefined) value.flagsKnown = false;
     if (row.delegated_amount === undefined) value.delegateKnown = false;
-    value.delegated += BigInt(row.delegated_amount || '0');
+    // Allowance can exceed the remaining account balance; only the spendable balance is exposed.
+    const allowance = BigInt(row.delegated_amount || '0');
+    value.delegated += allowance > amount ? amount : allowance;
     if (excluded.has(row.address)) value.excluded += amount;
     owners.set(row.owner, value);
   }

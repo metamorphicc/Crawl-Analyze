@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import bs58 from 'bs58';
-import { PARSER_VERSION, type Provenance } from '@crawlspider/contracts';
+import { PARSER_VERSION, extractPumpTrades, type Provenance } from '@crawlspider/contracts';
 import { decodeIdl, protocolIdl, type DecodedIdl } from './idl.js';
 import { integerString, type RpcTransport } from './rpc.js';
 import {
@@ -322,70 +322,7 @@ export type ExecutedTrade = {
   instruction: string;
 };
 export function executedTrades(tx: NormalizedTransaction): ExecutedTrade[] {
-  if (tx.failed) return [];
-  return tx.calls
-    .filter(
-      (c) =>
-        [PUMP_PROGRAM, PUMP_AMM_PROGRAM].includes(c.program) &&
-        /^(buy|sell)(_|$)/.test(c.instruction),
-    )
-    .flatMap((call) => {
-      const mint = call.accounts.base_mint || call.accounts.mint,
-        quoteMint = call.accounts.quote_mint || WRAPPED_SOL,
-        user = call.accounts.user;
-      if (!mint || !user) return [];
-      const side = call.instruction.startsWith('buy') ? 'buy' : 'sell';
-      // A net transaction delta alone is not a trade receipt: gifts, fees and other legs may coexist.
-      const sameLegs = tx.calls.filter(
-        (c) =>
-          (c.accounts.base_mint || c.accounts.mint) === mint &&
-          c.accounts.user === user &&
-          /^(buy|sell)(_|$)/.test(c.instruction),
-      );
-      const delta = tx.ownerDeltas.find((d) => d.owner === user && d.mint === mint)?.delta;
-      let amount: string | null = null;
-      const userAccount =
-        call.accounts.associated_base_user ||
-        call.accounts.associated_user ||
-        call.accounts.user_base_token_account;
-      const vault =
-        call.accounts.associated_base_bonding_curve ||
-        call.accounts.associated_bonding_curve ||
-        call.accounts.pool_base_token_account;
-      const receipts = tx.flows.filter(
-        (f) =>
-          f.mint === mint &&
-          f.kind === 'transfer' &&
-          userAccount &&
-          vault &&
-          (side === 'buy'
-            ? f.sourceAccount === vault && f.destinationAccount === userAccount
-            : f.sourceAccount === userAccount && f.destinationAccount === vault),
-      );
-      if (
-        sameLegs.length === 1 &&
-        receipts.length &&
-        delta !== undefined &&
-        !tx.limitations.includes('ACCOUNT_OWNER_CHANGED') &&
-        !tx.limitations.includes('TOKEN_2022_INSTRUCTION_UNSUPPORTED')
-      ) {
-        const total = receipts.reduce((n, f) => n + BigInt(f.amount), 0n);
-        if (BigInt(delta) === (side === 'buy' ? total : -total)) amount = total.toString();
-      }
-      return [
-        {
-          mint,
-          quoteMint,
-          user,
-          side,
-          amount,
-          program: call.program,
-          signature: tx.signature,
-          slot: tx.slot,
-          instruction: call.index,
-        },
-      ];
-    });
+  return extractPumpTrades(tx);
 }
 export async function getTransaction(rpc: RpcTransport, signature: string, signal: AbortSignal) {
   if (!/^[1-9A-HJ-NP-Za-km-z]{80,90}$/.test(signature))

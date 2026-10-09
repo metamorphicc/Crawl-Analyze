@@ -122,7 +122,9 @@ export function summarizeWallet(
       BigInt(entry.slot) >= BigInt(launch.slot) &&
       BigInt(entry.slot) <= BigInt(launch.slot) + 4n
         ? true
-        : null,
+        : entry && launch && windowDecoded && BigInt(entry.slot) > BigInt(launch.slot) + 4n
+          ? false
+          : null,
     freshWallet: null,
     coverage: history.coverage,
     reasons: [...new Set(reasons)],
