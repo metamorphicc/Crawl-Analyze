@@ -36,9 +36,15 @@ gradients use RGB resolved from the shared OKLCH tokens. Trails are decorative a
 wallets or analytical evidence. No dependency,
 remote asset, copied JavaScript or source-site analytics is added.
 
-The fixed control explicitly says “Ambient crawlers” outside scans. During a scan, job state
-and phase drive the activity display and movement; terminal states stop the movement. Polling/SSE
-remain the source of job state. There is no timer-based fake progress or invented verdict.
+The crawling canvas is now mounted only inside the homepage scanner hero. Its size and movement
+bounds come from that section, and text/form anchors use coordinates relative to the section.
+An absolute layer clips bodies, feet and trails at the hero boundary and scrolls with the document;
+it cannot follow the viewport into the report feed or other routes. ResizeObserver tracks actual
+section size changes. IntersectionObserver suspends rendering when the hero leaves the viewport
+and resumes the same crawler positions, gait and trails on return, without advancing hidden time.
+Scroll alone does not reset or retarget the scene. The fixed homepage control says “Ambient crawlers”.
+The shared scan activity context remains available, with polling/SSE as the source of job state.
+There is no timer-based fake progress or invented verdict.
 User pause persists in local storage. OS reduced-motion hides the moving layer. Rendering
 suspends in background tabs, caps device pixel ratio at 2 and targets 60 frames per second.
 Cached halo sprites avoid repeated shadow-blur work for every foot. React does not rerender per frame.

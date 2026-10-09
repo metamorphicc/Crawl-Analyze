@@ -1033,3 +1033,12 @@ main {
     display: none;
   }
 }
+
+/* Crawlers belong to the scanner hero and scroll with its document position. */
+.scanner-hero > .spider-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  contain: paint;
+}

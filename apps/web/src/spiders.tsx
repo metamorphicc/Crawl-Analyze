@@ -4,8 +4,14 @@ import { phaseLabel, stateLabel } from './format.js';
 import { SpiderRenderer, type CrawlActivity } from './spider-renderer.js';
 
 type Activity = CrawlActivity;
-const SpiderContext = createContext<{ setActivity: (activity: Activity) => void }>({
+const SpiderContext = createContext<{
+  setActivity: (activity: Activity) => void;
+  activity: Activity;
+  still: boolean;
+}>({
   setActivity: () => {},
+  activity: null,
+  still: false,
 });
 export const useSpiderActivity = () => useContext(SpiderContext);
 
@@ -40,58 +46,52 @@ export function SpiderEnvironment({ children, route }: { children: ReactNode; ro
   }, []);
   const settled = activity !== null && !['queued', 'running'].includes(activity.state);
   return (
-    <SpiderContext.Provider value={{ setActivity }}>
-      <SpiderCanvas activity={activity} still={paused || reduced || settled} route={route} />
+    <SpiderContext.Provider value={{ setActivity, activity, still: paused || reduced || settled }}>
       {children}
-      <div className="crawler-control">
-        <span className="crawler-mode">
-          {activity
-            ? `${stateLabel[activity.state] || activity.state} · ${phaseLabel[activity.phase] || activity.phase}`
-            : 'Ambient crawlers'}
-        </span>
-        <button
-          className="motion-toggle"
-          type="button"
-          disabled={reduced}
-          aria-pressed={paused || reduced}
-          aria-label={
-            reduced
-              ? 'Crawler motion disabled by system preference'
-              : paused
-                ? 'Resume crawlers'
-                : 'Pause crawlers'
-          }
-          onClick={() => {
-            const next = !paused;
-            setPaused(next);
-            try {
-              localStorage.setItem('crawlspider:pause-motion', String(next));
-            } catch {
-              /* Motion controls also work when storage is restricted. */
+      {route === '/' && (
+        <div className="crawler-control">
+          <span className="crawler-mode">
+            {activity
+              ? `${stateLabel[activity.state] || activity.state} · ${phaseLabel[activity.phase] || activity.phase}`
+              : 'Ambient crawlers'}
+          </span>
+          <button
+            className="motion-toggle"
+            type="button"
+            disabled={reduced}
+            aria-pressed={paused || reduced}
+            aria-label={
+              reduced
+                ? 'Crawler motion disabled by system preference'
+                : paused
+                  ? 'Resume crawlers'
+                  : 'Pause crawlers'
             }
-          }}
-        >
-          {paused || reduced ? (
-            <Play size={14} aria-hidden="true" />
-          ) : (
-            <Pause size={14} aria-hidden="true" />
-          )}
-          <span>{reduced ? 'Reduced motion' : paused ? 'Resume' : 'Pause'}</span>
-        </button>
-      </div>
+            onClick={() => {
+              const next = !paused;
+              setPaused(next);
+              try {
+                localStorage.setItem('crawlspider:pause-motion', String(next));
+              } catch {
+                /* Motion controls also work when storage is restricted. */
+              }
+            }}
+          >
+            {paused || reduced ? (
+              <Play size={14} aria-hidden="true" />
+            ) : (
+              <Pause size={14} aria-hidden="true" />
+            )}
+            <span>{reduced ? 'Reduced motion' : paused ? 'Resume' : 'Pause'}</span>
+          </button>
+        </div>
+      )}
     </SpiderContext.Provider>
   );
 }
 
-function SpiderCanvas({
-  activity,
-  still,
-  route,
-}: {
-  activity: Activity;
-  still: boolean;
-  route: string;
-}) {
+export function SpiderCanvas() {
+  const { activity, still } = useContext(SpiderContext);
   const canvasRef = useRef<HTMLCanvasElement>(null),
     rendererRef = useRef<SpiderRenderer | null>(null),
     activityRef = useRef(activity);
@@ -99,12 +99,19 @@ function SpiderCanvas({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const habitat = canvas.parentElement;
+    if (!habitat) return;
     const context = canvas.getContext('2d');
     if (!context) return;
-    const renderer = rendererRef.current ?? new SpiderRenderer(canvas, context);
+    const renderer = rendererRef.current ?? new SpiderRenderer(canvas, context, habitat);
     rendererRef.current = renderer;
-    renderer.retarget();
+    const bounds = habitat.getBoundingClientRect();
     let frame = 0,
+      inView =
+        bounds.bottom > 0 &&
+        bounds.top < innerHeight &&
+        bounds.right > 0 &&
+        bounds.left < innerWidth,
       previous = performance.now();
     const paint = (now: number) => {
       const elapsed = now - previous;
@@ -117,8 +124,9 @@ function SpiderCanvas({
     const redraw = () => renderer.draw(0, activityRef.current, true);
     const visibility = () => {
       cancelAnimationFrame(frame);
+      frame = 0;
       previous = performance.now();
-      if (!document.hidden) {
+      if (!document.hidden && inView) {
         redraw();
         if (!still) frame = requestAnimationFrame(paint);
       }
@@ -127,15 +135,25 @@ function SpiderCanvas({
       renderer.resize();
       redraw();
     };
+    const intersection = new IntersectionObserver(([entry]) => {
+      if (!entry) return;
+      inView = entry.isIntersecting;
+      visibility();
+    });
+    const dimensions = new ResizeObserver(resize);
+    intersection.observe(habitat);
+    dimensions.observe(habitat);
     redraw();
-    if (!still && !document.hidden) frame = requestAnimationFrame(paint);
+    visibility();
     addEventListener('resize', resize);
     document.addEventListener('visibilitychange', visibility);
     return () => {
       cancelAnimationFrame(frame);
+      intersection.disconnect();
+      dimensions.disconnect();
       removeEventListener('resize', resize);
       document.removeEventListener('visibilitychange', visibility);
     };
-  }, [still, route]);
+  }, [still]);
   return <canvas ref={canvasRef} className="spider-layer" aria-hidden="true" />;
 }

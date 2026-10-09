@@ -26,7 +26,7 @@ import { useLiveJob } from './live.js';
 import { ReportView } from './report.js';
 import { Watchlist } from './watches.js';
 import { ScanLine, Bookmark, BookOpen, Activity, Menu, ArrowUpRight } from 'lucide-react';
-import { SpiderEnvironment, SpiderMark, useSpiderActivity } from './spiders.js';
+import { SpiderCanvas, SpiderEnvironment, SpiderMark, useSpiderActivity } from './spiders.js';
 import '@fontsource/space-grotesk/400.css';
 import '@fontsource/space-grotesk/500.css';
 import '@fontsource/space-grotesk/600.css';
@@ -239,6 +239,7 @@ function Home() {
   return (
     <>
       <section className="scanner-hero">
+        <SpiderCanvas />
         <div className="hero-network" data-crawl-anchor>
           <span className="network-dot" />
           Solana token intelligence · pump.fun

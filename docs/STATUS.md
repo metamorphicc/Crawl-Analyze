@@ -6,6 +6,13 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 **Visual checkpoint: English CrawlScan-inspired website and moving crawlers; main build remains paused.**
 
+Latest refinement: crawlers are confined to the homepage hero containing the headline and scanner.
+The canvas scrolls with that section and uses local section coordinates instead of viewport
+coordinates. Offscreen rendering suspends while preserving positions, gait and trails; returning
+to the hero resumes the same scene. Section resizing is observed independently of scrolling.
+The canvas is absent from other routes. No tests, typecheck or browser validation were run at the
+user's request; the frontend assets are rebuilt for local serving. No server is started or push made.
+
 User refinement: the original motion was rejected as slow and its glow/trails too faint. The renderer
 now uses planted alternating leg groups, two-segment inverse kinematics, acceleration and corner
 braking. Nominal ambient speed increases from 23 to 112 px/s, running to 165 px/s. Bright foot cores,
@@ -18,7 +25,7 @@ The user authorized https://crawlscan.fun/ as a live visual reference, with movi
 principal detail. Reference typography, surfaces, composition and articulated motion were observed
 in the browser. The site now uses a large left-aligned headline, inline scanner, compact report
 feed, menu navigation and original canvas spiders. Ambient crawling is explicitly decorative;
-scan motion follows actual job state/phase and settles when the scan terminates. Pause persists,
+the scan activity context uses actual job state/phase. Pause persists,
 system reduced-motion is respected, hidden tabs suspend rendering, and the overlay never takes input.
 See `docs/CRAWLSCAN_VISUAL.md`. No tests, typechecks or browser validation of our changes were run
 at the user's explicit request. The frontend is rebuilt only to deliver the changed assets.

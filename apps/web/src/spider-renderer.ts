@@ -83,6 +83,7 @@ export class SpiderRenderer {
   private rails: Point[][] = [];
   private width = 0;
   private height = 0;
+  private dpr = 0;
   private clock = 0;
   private phase = '';
   private layoutAt = -1000;
@@ -90,6 +91,7 @@ export class SpiderRenderer {
   constructor(
     private readonly canvas: HTMLCanvasElement,
     private readonly ctx: CanvasRenderingContext2D,
+    private readonly habitat: HTMLElement,
   ) {
     this.colors = palette(canvas);
     this.glow = glowSprite(this.colors.accent);
@@ -99,9 +101,13 @@ export class SpiderRenderer {
   resize() {
     const previousWidth = this.width,
       previousHeight = this.height;
-    this.width = innerWidth;
-    this.height = innerHeight;
+    const width = Math.max(1, this.habitat.clientWidth),
+      height = Math.max(1, this.habitat.clientHeight);
     const dpr = Math.min(devicePixelRatio || 1, 2);
+    if (width === this.width && height === this.height && dpr === this.dpr) return;
+    this.width = width;
+    this.height = height;
+    this.dpr = dpr;
     this.canvas.width = Math.round(this.width * dpr);
     this.canvas.height = Math.round(this.height * dpr);
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -111,13 +117,13 @@ export class SpiderRenderer {
     for (const spider of this.crawlers) {
       spider.x = clamp(
         (spider.x * this.width) / (previousWidth || this.width),
-        38,
-        this.width - 38,
+        this.marginX,
+        this.width - this.marginX,
       );
       spider.y = clamp(
         (spider.y * this.height) / (previousHeight || this.height),
-        88,
-        Math.max(89, this.height - 68),
+        this.marginY,
+        this.height - this.marginY,
       );
       spider.feet = [];
       spider.trace = [];
@@ -148,22 +154,29 @@ export class SpiderRenderer {
     }
   }
 
+  private get marginX() {
+    return Math.min(this.width / 3, this.width < 600 ? 52 : 86);
+  }
+
+  private get marginY() {
+    return Math.min(this.height / 3, this.width < 600 ? 52 : 86);
+  }
+
   private collect() {
-    const minY = 88,
-      maxY = Math.max(minY + 1, this.height - 68);
+    const origin = this.habitat.getBoundingClientRect(),
+      minY = this.marginY,
+      maxY = this.height - this.marginY;
     this.rails = Array.from(
-      document.querySelectorAll(
-        '.hero-line, [data-crawl-anchor], main section h2, main article h3, .scanner-form',
-      ),
+      this.habitat.querySelectorAll('.hero-line, [data-crawl-anchor], .scanner-form'),
     )
       .flatMap((element) => Array.from(element.getClientRects()))
-      .filter((rect) => rect.width > 36 && rect.bottom > minY && rect.top < maxY)
+      .filter((rect) => rect.width > 36)
       .slice(0, 18)
       .map((rect) => {
-        const left = clamp(rect.left - 10, 38, this.width - 38),
-          right = clamp(rect.right + 10, 38, this.width - 38),
-          top = clamp(rect.top - 14, minY, maxY),
-          bottom = clamp(rect.bottom + 14, minY, maxY),
+        const left = clamp(rect.left - origin.left - 10, this.marginX, this.width - this.marginX),
+          right = clamp(rect.right - origin.left + 10, this.marginX, this.width - this.marginX),
+          top = clamp(rect.top - origin.top - 14, minY, maxY),
+          bottom = clamp(rect.bottom - origin.top + 14, minY, maxY),
           midX = (left + right) / 2;
         return [
           { x: left, y: top },
@@ -216,7 +229,7 @@ export class SpiderRenderer {
     if (this.clock - this.layoutAt > 550) {
       this.collect();
       for (const [index, spider] of this.crawlers.entries()) {
-        // Reattach after scrolling, not every frame or at each footstep.
+        // Follow local layout changes; scrolling does not change these coordinates.
         const rail = this.rails[spider.railIndex];
         if (!rail || length(rail[0]!, spider.rail[0]!) > 70) this.assignRail(spider, index);
         else {
@@ -263,11 +276,15 @@ export class SpiderRenderer {
       target = spider.rest ? 0 : base * burst * clamp(1 - Math.abs(turn) / 2.5, 0.12, 1);
     spider.speed += (target - spider.speed) * Math.min(dt * 9, 1);
     const old = { x: spider.x, y: spider.y };
-    spider.x = clamp(spider.x + Math.cos(spider.angle) * spider.speed * dt, 38, this.width - 38);
+    spider.x = clamp(
+      spider.x + Math.cos(spider.angle) * spider.speed * dt,
+      this.marginX,
+      this.width - this.marginX,
+    );
     spider.y = clamp(
       spider.y + Math.sin(spider.angle) * spider.speed * dt,
-      88,
-      Math.max(89, this.height - 68),
+      this.marginY,
+      this.height - this.marginY,
     );
     const travelled = length(old, spider);
     spider.cycle = (spider.cycle + travelled / (55 * spider.size)) % 1;
