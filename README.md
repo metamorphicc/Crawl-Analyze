@@ -4,12 +4,13 @@ Solana token intelligence: holder relationships, concentration, liquidity scenar
 and change alerts through a website and Telegram bot. Accepts Solana mint addresses and supported
 pump.fun, Axiom and GMGN links.
 
-**Current state: durable scan pipeline through stage 07, locally verified.** Supported inputs,
-holder indexing, Pump decoding, wallet evidence, heuristic risk and sell scenarios are implemented.
-The actual-adapter inspection command is documented in [stage 06](docs/STAGE_06.md); public scan/report
-routes and worker recovery are documented in [stage 07](docs/STAGE_07.md). Full website and Telegram
-journeys are subsequent stages. Mainnet acceptance remains pending
-local provider keys. Website styling awaits the user's `design.md`.
+**Current state: functional website through stage 09, locally verified.** Supported inputs,
+holder indexing, Pump decoding, wallet evidence, heuristic risk, scenarios, durable scans and
+position comparisons are implemented. The [website](docs/STAGE_09.md) supports scan/progress/report/
+evidence/export/terminal journeys. [Early buyers and changes](docs/STAGE_08.md) and
+[queue/API recovery](docs/STAGE_07.md) use the same immutable reports. Telegram interaction and
+persistent watchlists are stages 10–11. Mainnet acceptance still needs local provider keys;
+website styling and spiders await the user's `design.md`.
 
 - [Complete build plan](docs/BUILD_PLAN.md)
 - [Architecture decisions](docs/DECISIONS.md)
@@ -49,6 +50,9 @@ readiness is `/health/ready`. `/v1/status` additionally exposes provider capabil
 `npm run build` compiles packages/services and the Vite frontend. Compiled API/worker/bot can run
 with `node apps/<service>/dist/index.js` from the repository root. Schema migration is idempotent.
 `npm run test:integration` uses real local PostgreSQL/Redis and an isolated disposable test schema.
+`npm run test:browser` builds the site and runs Chromium against an isolated real API/DB/queue with
+explicitly synthetic test reports. It does not contact mainnet or Telegram. Rebuild afterwards for
+the normal API origin. Historical browser routes require an `index.html` fallback when hosted.
 
 The local PostgreSQL and Redis containers bind to `127.0.0.1` only and retain named volumes.
 `npm run infra:down` stops them without deleting those volumes.

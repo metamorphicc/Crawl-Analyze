@@ -26,6 +26,7 @@
     "build": "node tools/build.mjs",
     "test": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:browser": "npm run build && playwright test --config tests/browser/playwright.config.ts",
     "db:migrate": "node --conditions=development --import tsx packages/storage/src/migrate.ts",
     "dev:api": "node --conditions=development --import tsx apps/api/src/index.ts",
     "dev:worker": "node --conditions=development --import tsx apps/worker/src/index.ts",

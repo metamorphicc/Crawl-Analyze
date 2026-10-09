@@ -14,6 +14,7 @@ import {
 import { sharedProviderBudget, ScanStore, type Storage, type Lease } from '@crawlspider/storage';
 import {
   RpcClient,
+  terminalLinks,
   resolveInput,
   consistentHolders,
   verifyInfrastructure,
@@ -173,7 +174,10 @@ export async function runScan(
       mode: lease.mode,
       observedAt,
       identity: holderResult.identity,
-      links: resolved.links,
+      links: terminalLinks(
+        lease.mint,
+        marketResult.markets.find((m) => m.venue === 'pump-swap' && m.canonical)?.address,
+      ),
       snapshot: {
         holders,
         enumerationComplete: holderResult.snapshot.enumerationComplete,

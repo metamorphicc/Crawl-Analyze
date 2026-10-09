@@ -4,6 +4,18 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
+**Stage 09: functional website implemented and locally verified; design and live acceptance pending.**
+
+Stage 07 checkpoint: `49f50bf`. Stage 08 checkpoint: `93433bc`. Stage 09 subject:
+`feat: build the live scanner website and evidence workbench`.
+142 unit tests, 11 real PostgreSQL/Redis integration tests and 8 built-site Chromium journeys pass.
+Public scanner/progress/cancellation, historical reports, search/pagination, evidence dialogs,
+early buyers/changes, scenarios, immutable share/export, terminal links, status/methodology and
+independent bounded market enrichment are functional. Responsive containment and keyboard checks
+pass. See `docs/STAGE_09.md`. Visual styling/spiders/map await the user's design document; mainnet
+acceptance awaits locally configured credentials. Watchlist persistence remains stage 11.
+The authorized three-stage batch (07–09) is finished; stop here without starting stage 10.
+
 **Stage 08: implemented and locally verified; live provider acceptance remains pending.**
 
 Stage 07 checkpoint: `49f50bf`. Stage 08 subject:
@@ -137,8 +149,9 @@ the actual container references/digests are in `docs/ENVIRONMENT.md`.
 
 ## Next task
 
-Implement stage 09 with a separate local commit, then stop. Live gates remain
-pending; do not mark them passed without credentials and evidence.
+Stopped after stages 07–09, as requested. Await the user's next instruction before stage 10
+(Telegram scanning). Live and visual gates remain pending; do not mark them passed without
+credentials, the supplied design and evidence.
 
 Continue directly on `main`, as explicitly requested by the human. No push.
 Website styling and spider animation wait for the user's `design.md` / `desigh.md`.

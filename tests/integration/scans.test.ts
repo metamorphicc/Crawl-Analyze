@@ -11,6 +11,8 @@ import { createApp } from '../../apps/api/src/app.js';
 import { fixtureReport } from '../fixtures/report.js';
 import { key } from '../fixtures/analytics.js';
 import { comparePositions } from '@crawlspider/analysis';
+import Fastify from 'fastify';
+import { registerChart } from '../../apps/api/src/chart.js';
 async function environment() {
   const config = {
     ...loadConfig(),
@@ -55,6 +57,80 @@ async function waitUntil(check: () => Promise<boolean>) {
   throw new Error('Timed out waiting for fixture worker');
 }
 describe('durable scans on real PostgreSQL/Redis', () => {
+  it('serves independently timed chart enrichment with a shared gate and validated cache', async () => {
+    const e = await environment(),
+      app = Fastify(),
+      namespace = `browser-chart-test:${randomUUID()}`;
+    let calls = 0;
+    registerChart(app, e.config, e.storage, {
+      namespace,
+      request: async () => {
+        calls++;
+        await delay(100);
+        return new Response(
+          JSON.stringify({
+            data: { attributes: { ohlcv_list: [[1700000000, 1, 2, 0.5, 1.5, 10]] } },
+            meta: { base: { address: key(1) }, quote: { address: key(2) } },
+          }),
+        );
+      },
+    });
+    try {
+      const missing = await app.inject(`/v1/tokens/${key(9)}/market`);
+      expect(missing.json().reasons).toContain('VERIFIED_POOL_UNAVAILABLE');
+      expect(calls).toBe(0);
+      const job = await e.store.admit(key(1), 'deep', 'chart'),
+        lease = (await e.store.claim(job.job.id))!,
+        report = fixtureReport(job.job.id);
+      report.scenarios.scenarios = [
+        {
+          fractionBps: 2500,
+          baseIn: '1',
+          routes: [],
+          quotes: [
+            {
+              modelVersion: 'pump-sell-1',
+              market: key(2),
+              venue: 'pump-swap',
+              quoteMint: key(3),
+              slot: '1',
+              observedAt: report.observedAt,
+              baseIn: '1',
+              status: 'unavailable',
+              reasons: ['SYNTHETIC_SCENARIO'],
+            },
+          ],
+        },
+      ];
+      await e.store.finish(lease, report);
+      const results = await Promise.all([
+        app.inject(`/v1/tokens/${key(1)}/market`),
+        app.inject(`/v1/tokens/${key(1)}/market`),
+      ]);
+      expect(results.map((r) => r.json().status).sort()).toEqual(['available', 'unavailable']);
+      expect(calls).toBe(1);
+      const cached = await app.inject(`/v1/tokens/${key(1)}/market`);
+      expect(cached.json().status).toBe('available');
+      expect(calls).toBe(1);
+      await e.storage.redis.set(
+        `${namespace}:${key(1)}:${key(2)}`,
+        JSON.stringify({ ...cached.json(), mint: key(9) }),
+        'EX',
+        60,
+      );
+      expect((await app.inject(`/v1/tokens/${key(1)}/market`)).json().reasons).toEqual([
+        'CHART_CACHE_MISMATCH',
+      ]);
+      expect((await e.store.report(report.id)).observedAt).toBe(report.observedAt);
+      expect((await e.store.report(report.id)).scenarios.scenarios[0]!.quotes[0]!.status).toBe(
+        'unavailable',
+      );
+    } finally {
+      await app.close();
+      await e.storage.redis.del(`${namespace}:gate`, `${namespace}:${key(1)}:${key(2)}`);
+      await e.close();
+    }
+  });
   it('commits successive positions and comparisons atomically with report completion', async () => {
     const e = await environment();
     try {

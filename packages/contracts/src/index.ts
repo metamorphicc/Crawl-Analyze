@@ -72,6 +72,64 @@ export const serviceStatusSchema = z.object({
   capabilities: z.object({ rpc: z.boolean(), holderIndex: z.boolean(), telegram: z.boolean() }),
 });
 export type ServiceStatus = z.infer<typeof serviceStatusSchema>;
+export const queueStatusSchema = z.object({
+  capacity: z.number().int().positive(),
+  lanes: z.array(
+    z.object({
+      lane: z.enum(['preview', 'deep', 'monitor']),
+      state: z.enum(['queued', 'running']),
+      count: z.number().int().nonnegative(),
+    }),
+  ),
+});
+const chartDecimal = z
+  .string()
+  .max(100)
+  .regex(/^\d+(\.\d+)?([eE][+-]?\d+)?$/)
+  .refine(
+    (v) => Number.isFinite(Number(v)) && (Number(v) > 0 || /^0+(\.0+)?([eE][+-]?\d+)?$/.test(v)),
+  );
+export const marketChartSchema = z
+  .object({
+    status: z.enum(['available', 'unavailable']),
+    mint: addressSchema,
+    pool: addressSchema.nullable(),
+    provider: z.literal('geckoterminal'),
+    observedAt: z.iso.datetime(),
+    currency: z.literal('USD'),
+    intervalSeconds: z.literal(300),
+    reasons: z.array(z.string()),
+    candles: z
+      .array(
+        z.object({
+          time: z.number().int().nonnegative().max(8640000000000),
+          open: chartDecimal,
+          high: chartDecimal,
+          low: chartDecimal,
+          close: chartDecimal,
+          volume: chartDecimal,
+        }),
+      )
+      .max(100),
+  })
+  .superRefine((value, ctx) => {
+    if (
+      value.status === 'available'
+        ? !value.pool || !value.candles.length || value.reasons.length
+        : value.candles.length || !value.reasons.length
+    )
+      ctx.addIssue({ code: 'custom', message: 'Chart status and coverage disagree' });
+    if (
+      value.candles.some(
+        (c, i) =>
+          (i > 0 && c.time <= value.candles[i - 1]!.time) ||
+          Number(c.low) > Math.min(Number(c.open), Number(c.close)) ||
+          Number(c.high) < Math.max(Number(c.open), Number(c.close)),
+      )
+    )
+      ctx.addIssue({ code: 'custom', message: 'Invalid candle order or range' });
+  });
+export type MarketChart = z.infer<typeof marketChartSchema>;
 export const evidenceSchema = z.object({
   id: z.string(),
   kind: z.enum(['transfer', 'swap', 'funding', 'shared-funder', 'behavior', 'authority']),
@@ -399,6 +457,7 @@ export const scanAcceptanceSchema = z.object({
   cancelToken: z.string().nullable(),
 });
 export type ScanAcceptance = z.infer<typeof scanAcceptanceSchema>;
+export const cancellationSchema = z.object({ cancelled: z.literal(true) });
 export const jobDetailsSchema = jobSchema.extend({
   phase: z.string(),
   attempt: z.number().int().nonnegative(),

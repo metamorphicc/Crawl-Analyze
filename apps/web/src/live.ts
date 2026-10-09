@@ -1,0 +1,114 @@
+import { useEffect, useState } from 'react';
+import {
+  jobDetailsSchema,
+  reportSchema,
+  scanEventSchema,
+  type JobDetails,
+  type AnalysisReport,
+} from '@crawlspider/contracts';
+import { apiUrl, request, clearCancellation, errorMessage } from './api.js';
+export function useLiveJob(id: string) {
+  const [job, setJob] = useState<JobDetails>(),
+    [report, setReport] = useState<AnalysisReport>(),
+    [error, setError] = useState(''),
+    [connection, setConnection] = useState('Подключаемся…');
+  useEffect(() => {
+    setJob(undefined);
+    setReport(undefined);
+    setError('');
+    const controller = new AbortController();
+    let source: EventSource | undefined,
+      timer: ReturnType<typeof setTimeout> | undefined,
+      reconnect: ReturnType<typeof setTimeout> | undefined,
+      busy = false,
+      again = false,
+      nextPoll = 2500,
+      terminal = false,
+      cursor = '0';
+    const connect = () => {
+      if (controller.signal.aborted || terminal) return;
+      source = new EventSource(
+        apiUrl(`/v1/scans/${encodeURIComponent(id)}/events?after=${cursor}`),
+      );
+      source.onopen = () => setConnection('Обновления подключены');
+      source.onmessage = (event) => {
+        try {
+          const parsed = scanEventSchema.parse(JSON.parse(event.data));
+          if (parsed.jobId !== id || BigInt(parsed.id) <= BigInt(cursor)) return;
+          cursor = parsed.id;
+          void update();
+        } catch {
+          setConnection('Проверяем состояние скана');
+        }
+      };
+      source.onerror = () => {
+        source?.close();
+        if (!terminal && !controller.signal.aborted) {
+          setConnection('Прямой канал прерван; проверяем состояние');
+          reconnect = setTimeout(connect, 5000);
+        }
+      };
+    };
+    const update = async () => {
+      if (busy) {
+        again = true;
+        return;
+      }
+      if (controller.signal.aborted || terminal) return;
+      busy = true;
+      try {
+        const details = await request(`/v1/scans/${encodeURIComponent(id)}`, jobDetailsSchema, {
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+        setJob(details);
+        if (details.preview) setReport(details.preview);
+        if (details.reportId) {
+          const final = await request(`/v1/reports/${details.reportId}`, reportSchema, {
+            signal: controller.signal,
+          });
+          if (controller.signal.aborted) return;
+          if (final.identity.mint !== details.mint || final.jobId !== id)
+            throw new Error('Отчёт не соответствует скану.');
+          setReport(final);
+        }
+        setError('');
+        nextPoll = 2500;
+        if (!['queued', 'running'].includes(details.state)) {
+          terminal = true;
+          source?.close();
+          if (reconnect) clearTimeout(reconnect);
+          clearCancellation(id);
+          setConnection('Скан остановлен');
+        }
+      } catch (e) {
+        if (!controller.signal.aborted) {
+          setError(errorMessage(e));
+          nextPoll = Math.min(nextPoll * 2, 30000);
+          again = false;
+        }
+      } finally {
+        busy = false;
+        if (!controller.signal.aborted && !terminal) {
+          if (timer) clearTimeout(timer);
+          timer = setTimeout(
+            () => {
+              again = false;
+              void update();
+            },
+            again ? 100 : nextPoll,
+          );
+        }
+      }
+    };
+    void update();
+    connect();
+    return () => {
+      controller.abort();
+      source?.close();
+      if (timer) clearTimeout(timer);
+      if (reconnect) clearTimeout(reconnect);
+    };
+  }, [id]);
+  return { job, report, error, connection };
+}
