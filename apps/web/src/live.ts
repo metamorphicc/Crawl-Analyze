@@ -5,16 +5,19 @@ import {
   scanEventSchema,
   type JobDetails,
   type AnalysisReport,
+  type ScanEvent,
 } from '@crawlspider/contracts';
 import { apiUrl, request, clearCancellation, errorMessage } from './api.js';
 export function useLiveJob(id: string) {
   const [job, setJob] = useState<JobDetails>(),
     [report, setReport] = useState<AnalysisReport>(),
+    [events, setEvents] = useState<ScanEvent[]>([]),
     [error, setError] = useState(''),
     [connection, setConnection] = useState('Connecting…');
   useEffect(() => {
     setJob(undefined);
     setReport(undefined);
+    setEvents([]);
     setError('');
     const controller = new AbortController();
     let source: EventSource | undefined,
@@ -36,6 +39,7 @@ export function useLiveJob(id: string) {
           const parsed = scanEventSchema.parse(JSON.parse(event.data));
           if (parsed.jobId !== id || BigInt(parsed.id) <= BigInt(cursor)) return;
           cursor = parsed.id;
+          setEvents((previous) => [...previous, parsed].slice(-40));
           void update();
         } catch {
           setConnection('Checking scan status');
@@ -110,5 +114,5 @@ export function useLiveJob(id: string) {
       if (reconnect) clearTimeout(reconnect);
     };
   }, [id]);
-  return { job, report, error, connection };
+  return { job, report, events, error, connection };
 }

@@ -18,6 +18,10 @@
   --color-grid: oklch(26% 0.028 142);
   --color-error: oklch(82% 0.1 30);
   --color-error-surface: oklch(24% 0.025 30);
+  --color-danger: oklch(72% 0.18 27);
+  --color-danger-surface: oklch(23% 0.04 27);
+  --color-warning: oklch(82% 0.14 80);
+  --color-warning-surface: oklch(23% 0.025 80);
   --color-backdrop: oklch(10% 0.005 155 / 0.8);
   --color-focus: var(--color-ink);
   --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;

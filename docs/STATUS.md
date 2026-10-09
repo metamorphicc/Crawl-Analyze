@@ -4,6 +4,19 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
+**Result-screen refinement from the user's video reference.**
+
+The active product is again the durable website/bot/worker version. The cancelled ephemeral
+refactor was preserved locally and the checkout restored to the GitHub main revision `8969444`.
+The new visual substage replaces the plain token-result presentation with a mint-centered live
+wallet scene, bounded articulated crawlers, real worker phases/events and a compact report
+workbench: source-backed metrics, chart, holder flags, verdict sidebar, early buyers and criteria.
+A selectable/zoomable relationship map and complete evidence tables are wired to real reports.
+Homepage crawlers remain hero-confined; results use their own section-bound scene. See
+`docs/RESULT_WORKBENCH.md`. Tests, typecheck, browser/live validation are disabled by the user's
+instruction. Only frontend assets are generated. No servers, push or deployment. Stage 13 operations
+and stage 14 mainnet acceptance remain pending. Earlier visual notes below describe prior checkpoints.
+
 **Visual checkpoint: English CrawlScan-inspired website and moving crawlers; main build remains paused.**
 
 Latest refinement: crawlers are confined to the homepage hero containing the headline and scanner.

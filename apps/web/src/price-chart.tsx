@@ -4,6 +4,7 @@ import { marketChartSchema, type MarketChart } from '@crawlspider/contracts';
 import { useResource, errorMessage } from './api.js';
 import { date } from './format.js';
 import { External } from './report.js';
+import { shortAddress } from './wallet-view.js';
 export function PriceChart({ mint }: { mint: string }) {
   const query = useResource(`/v1/tokens/${encodeURIComponent(mint)}/market`, marketChartSchema);
   if (query.data && query.data.mint !== mint)
@@ -47,7 +48,7 @@ function Candles({ data }: { data: MarketChart }) {
         down = color('--color-error');
       chart = createChart(ref.current, {
         autoSize: true,
-        height: 300,
+        height: ref.current.clientHeight || 340,
         layout: {
           attributionLogo: true,
           background: { type: ColorType.Solid, color: surface },
@@ -83,21 +84,19 @@ function Candles({ data }: { data: MarketChart }) {
   }, [data]);
   return (
     <>
-      <p>
-        GeckoTerminal · USD · 5-minute interval · retrieved {date(data.observedAt)} · pool{' '}
-        {data.pool}.
-      </p>
-      <p>The chart uses rounded prices. Exact source values are preserved in the table.</p>
+      <div className="chart-source-bar">
+        <span>GeckoTerminal · USD</span>
+        <span>
+          Pool{' '}
+          <External url={`https://www.geckoterminal.com/solana/pools/${data.pool}`}>
+            {shortAddress(data.pool!)}
+          </External>
+        </span>
+        <span>Updated {date(data.observedAt)}</span>
+      </div>
       {data.candles.length > 0 && Date.now() - data.candles.at(-1)!.time * 1000 > 600000 && (
         <p role="status">Stale candles: the last trading candle is over 10 minutes old.</p>
       )}
-      <p>
-        Last candle:{' '}
-        {data.candles.length
-          ? new Date(data.candles.at(-1)!.time * 1000).toLocaleString('en-US')
-          : 'no'}
-        . Missing intervals are not filled artificially.
-      </p>
       {error && <p role="status">{error}</p>}
       <div
         ref={ref}
@@ -112,7 +111,15 @@ function Candles({ data }: { data: MarketChart }) {
         </External>
       </p>
       <details>
-        <summary>Candle table (exact source values)</summary>
+        <summary>Candle source and exact values</summary>
+        <p>
+          The chart uses rounded prices. Exact source values are preserved below. Missing intervals
+          are not filled artificially. Last candle:{' '}
+          {data.candles.length
+            ? new Date(data.candles.at(-1)!.time * 1000).toLocaleString('en-US')
+            : 'unavailable'}
+          .
+        </p>
         <div className="table-scroll" tabIndex={0} role="region" aria-label="USD candles">
           <table>
             <caption>USD candles</caption>

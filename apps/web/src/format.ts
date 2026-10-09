@@ -40,6 +40,7 @@ export const stateLabel: Record<string, string> = {
   unavailable: 'Unavailable',
 };
 export const phaseLabel: Record<string, string> = {
+  'verify-mint': 'Verifying token',
   'launch-history': 'Finding launch and first buys',
   'old-owner-positions': 'Checking previous holders',
   'wallet-history': 'Wallet history',

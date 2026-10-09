@@ -24,6 +24,7 @@ import { request, useResource, errorMessage, saveCancellation, cancellation } fr
 import { date, stateLabel, phaseLabel } from './format.js';
 import { useLiveJob } from './live.js';
 import { ReportView } from './report.js';
+import { CrawlStage } from './crawl-stage.js';
 import { Watchlist } from './watches.js';
 import { ScanLine, Bookmark, BookOpen, Activity, Menu, ArrowUpRight } from 'lucide-react';
 import { SpiderCanvas, SpiderEnvironment, SpiderMark, useSpiderActivity } from './spiders.js';
@@ -32,6 +33,7 @@ import '@fontsource/space-grotesk/500.css';
 import '@fontsource/space-grotesk/600.css';
 import '@fontsource/ibm-plex-mono/400.css';
 import './base.css';
+import './workbench.css';
 const root = createRootRoute({
   component: Layout,
   notFoundComponent: () => (
@@ -380,8 +382,14 @@ function Token() {
     return <p role="alert">Invalid Solana address.</p>;
   return (
     <>
-      <h1>Token {mint}</h1>
-      <Scanner key={mint} initial={mint} />
+      <div className="token-workbench-heading">
+        <Link to="/">← Scanner</Link>
+        <h1>Token analysis</h1>
+      </div>
+      <details className="rescan-panel">
+        <summary>Scan another token or change analysis mode</summary>
+        <Scanner key={mint} initial={mint} />
+      </details>
       {job ? <Live key={job} id={job} mint={mint} /> : <Latest key={mint} mint={mint} />}
     </>
   );
@@ -408,7 +416,7 @@ function Latest({ mint }: { mint: string }) {
   );
 }
 function Live({ id, mint }: { id: string; mint: string }) {
-  const { job, report, error, connection } = useLiveJob(id),
+  const { job, report, events, error, connection } = useLiveJob(id),
     [cancelError, setCancelError] = useState(''),
     [cancelling, setCancelling] = useState(false);
   const { setActivity } = useSpiderActivity();
@@ -436,28 +444,21 @@ function Live({ id, mint }: { id: string; mint: string }) {
   }
   return (
     <>
-      <section className="scan-progress" aria-label="Scan status" data-crawl-anchor>
-        <h2>Scan {id}</h2>
-        <p role="status">
-          {job
-            ? `${stateLabel[job.state]} · ${phaseLabel[job.phase] || job.phase}`
-            : 'Loading status…'}
-        </p>
-        <p>{connection}</p>
-        {job?.deadlineAt && active && (
-          <p>
-            Deadline: {date(job.deadlineAt)}. Attempt: {job.attempt}.
-          </p>
-        )}
-        {error && <p role="alert">{error}</p>}
-        {job?.errorCode && <p role="alert">Code: {job.errorCode}. You can start a new scan.</p>}
+      <CrawlStage
+        mint={mint}
+        job={job}
+        report={report}
+        events={events}
+        connection={connection}
+        error={error}
+      >
         {active && capability && (
           <button disabled={cancelling} onClick={() => void cancel()}>
             {cancelling ? 'Cancelling…' : 'Cancel scan'}
           </button>
         )}
-        {cancelError && <p role="alert">{cancelError}</p>}
-      </section>
+      </CrawlStage>
+      {cancelError && <p role="alert">{cancelError}</p>}
       {report && (
         <ReportView key={report.id} report={report} provisional={report.id !== job?.reportId} />
       )}
