@@ -6,6 +6,14 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 **Visual checkpoint: English CrawlScan-inspired website and moving crawlers; main build remains paused.**
 
+User refinement: the original motion was rejected as slow and its glow/trails too faint. The renderer
+now uses planted alternating leg groups, two-segment inverse kinematics, acceleration and corner
+braking. Nominal ambient speed increases from 23 to 112 px/s, running to 165 px/s. Bright foot cores,
+cached halos/contact rings and 2.6-second age-faded blue/green trails replace the faint dashed line.
+Rendering targets 60 fps with DPR capped at 2. Pause preserves the scene, and phase changes no longer
+recreate all feet/trails. No tests, typecheck or visual validation were run, respecting the user's
+instruction. Frontend assets are rebuilt; user review is still required.
+
 The user authorized https://crawlscan.fun/ as a live visual reference, with moving spiders as the
 principal detail. Reference typography, surfaces, composition and articulated motion were observed
 in the browser. The site now uses a large left-aligned headline, inline scanner, compact report

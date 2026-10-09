@@ -12,8 +12,9 @@
   --color-accent-ink: oklch(18% 0.025 142);
   --color-accent-surface: oklch(22% 0.045 142);
   --color-spider-joint: oklch(83% 0.07 230);
-  --color-spider-thread: oklch(65% 0.04 230);
-  --color-spider-fill: oklch(20% 0.04 142);
+  --color-spider-thread: oklch(78% 0.055 230);
+  --color-spider-fill: oklch(24% 0.055 142);
+  --color-spider-highlight: oklch(95% 0.045 142);
   --color-grid: oklch(26% 0.028 142);
   --color-error: oklch(82% 0.1 30);
   --color-error-surface: oklch(24% 0.025 30);

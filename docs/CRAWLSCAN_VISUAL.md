@@ -26,16 +26,22 @@ edge-aligned brand/menu and mast-headed footer. Preserve installed Space Grotesk
 all routes, public scanning, real reports, evidence semantics and English interface.
 Update existing tokens and append the visual layer to the global stylesheet.
 
-The original `spiders.tsx` draws six crawlers on desktop, four on medium screens and two on small
-screens. Feet plant and step separately from the body; jointed legs follow heading/form/report
-bounds. Trails are decorative and do not represent wallets or analytical evidence. No dependency,
+The `spiders.tsx` controller and original `spider-renderer.ts` engine draw six crawlers on desktop,
+four on medium screens and two on small screens. Alternating four-leg groups use a planted stance,
+smooth swing and two-segment inverse kinematics. Bodies accelerate, slow for turns, and follow
+interface edges. Nominal speeds are 112 px/s ambient, 72 px/s queued and 165 px/s running, with
+individual variation. Foot contacts have a bright core, a cached radial halo and a brief expanding
+contact ring. Blue/green trails retain up to 2.6 seconds of movement and fade by age. Shadows and
+gradients use RGB resolved from the shared OKLCH tokens. Trails are decorative and do not represent
+wallets or analytical evidence. No dependency,
 remote asset, copied JavaScript or source-site analytics is added.
 
 The fixed control explicitly says “Ambient crawlers” outside scans. During a scan, job state
 and phase drive the activity display and movement; terminal states stop the movement. Polling/SSE
 remain the source of job state. There is no timer-based fake progress or invented verdict.
 User pause persists in local storage. OS reduced-motion hides the moving layer. Rendering
-suspends in background tabs, caps device pixel ratio at 1.5 and draws at most 30 frames per second.
+suspends in background tabs, caps device pixel ratio at 2 and targets 60 frames per second.
+Cached halo sprites avoid repeated shadow-blur work for every foot. React does not rerender per frame.
 The layer is decorative, inaccessible to pointer input and hidden from assistive technology.
 Evidence dialogs use the native top layer, above decorative motion.
 
