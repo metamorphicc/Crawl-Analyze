@@ -1,0 +1,38 @@
+/* CrawlSpider · minimal UI tokens; final visual direction waits for design.md. */
+:root {
+  color-scheme: dark;
+  --color-paper: oklch(16% 0.009 155);
+  --color-paper-2: oklch(20% 0.009 155);
+  --color-paper-3: oklch(25% 0.009 155);
+  --color-rule: oklch(34% 0.01 155);
+  --color-field-rule: oklch(52% 0.01 155);
+  --color-muted: oklch(76% 0.01 155);
+  --color-ink: oklch(95% 0.005 155);
+  --color-accent: oklch(80% 0.14 155);
+  --color-accent-ink: oklch(18% 0.012 155);
+  --color-accent-surface: oklch(25% 0.025 155);
+  --color-error: oklch(82% 0.1 30);
+  --color-error-surface: oklch(24% 0.025 30);
+  --color-backdrop: oklch(10% 0.005 155 / 0.8);
+  --color-focus: var(--color-ink);
+  --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-display);
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 0.75rem;
+  --space-lg: 1rem;
+  --space-xl: 1.5rem;
+  --space-2xl: 2rem;
+  --space-3xl: 3rem;
+  --text-sm: 0.8125rem;
+  --text-body: 0.9375rem;
+  --text-lg: 1.125rem;
+  --text-title: clamp(1.75rem, 3vw, 2.25rem);
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+}

@@ -2,22 +2,22 @@ import { useQuery } from '@tanstack/react-query';
 export const apiUrl = (path: string) =>
   `${(import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '')}${path}`;
 const messages: Record<string, string> = {
-  PROVIDER_NOT_CONFIGURED: 'Источники сканирования ещё не подключены.',
-  INVALID_INPUT: 'Введите Solana mint или поддерживаемую ссылку.',
-  INVALID_ADDRESS: 'Некорректный адрес Solana.',
-  UNSUPPORTED_URL: 'Ссылка не поддерживается. Введите адрес mint.',
-  UNSUPPORTED_HOST: 'Поддерживаются pump.fun, Axiom и GMGN. Для других сервисов введите mint.',
-  INVALID_URL: 'Введите полную HTTPS-ссылку на токен.',
-  UNSUPPORTED_PAIR: 'Этот пул пока не поддерживается. Введите mint токена.',
-  ACCOUNT_NOT_FOUND: 'Адрес не найден в Solana.',
-  NOT_A_MINT: 'Это не mint токена. Введите mint или поддерживаемую ссылку на пул.',
-  AMBIGUOUS_INPUT: 'Ссылка содержит разные адреса. Введите один mint.',
-  SCAN_QUOTA: 'Лимит сканов исчерпан. Попробуйте позже.',
-  QUEUE_FULL: 'Очередь заполнена. Попробуйте позже.',
-  CANCEL_REJECTED: 'Этот браузер не может отменить скан.',
+  PROVIDER_NOT_CONFIGURED: 'Scan data sources are not connected yet.',
+  INVALID_INPUT: 'Enter a Solana mint or a supported link.',
+  INVALID_ADDRESS: 'Invalid Solana address.',
+  UNSUPPORTED_URL: 'Unsupported link. Enter a mint address.',
+  UNSUPPORTED_HOST: 'pump.fun, Axiom and GMGN are supported. For other services, enter the mint.',
+  INVALID_URL: 'Enter a complete HTTPS token link.',
+  UNSUPPORTED_PAIR: 'This pool is not supported yet. Enter the token mint.',
+  ACCOUNT_NOT_FOUND: 'Address not found on Solana.',
+  NOT_A_MINT: 'This is not a token mint. Enter a mint or a supported pool link.',
+  AMBIGUOUS_INPUT: 'The link contains multiple addresses. Enter one mint.',
+  SCAN_QUOTA: 'Scan limit reached. Try again later.',
+  QUEUE_FULL: 'Queue is full. Try again later.',
+  CANCEL_REJECTED: 'This browser cannot cancel the scan.',
 };
 export function errorMessage(e: unknown) {
-  return e instanceof Error ? e.message : 'Не удалось получить данные.';
+  return e instanceof Error ? e.message : 'Unable to retrieve data.';
 }
 export async function request<T>(
   path: string,
@@ -38,16 +38,16 @@ export async function request<T>(
     throw new Error(
       messages[code] ||
         (response.status === 429
-          ? 'Слишком много запросов. Попробуйте позже.'
+          ? 'Too many requests. Try again later.'
           : response.status === 404
-            ? 'Результат не найден.'
-            : 'Сервис временно недоступен. Попробуйте снова.'),
+            ? 'Result not found.'
+            : 'Service temporarily unavailable. Try again.'),
     );
   }
   try {
     return schema.parse(value);
   } catch {
-    throw new Error('Получен несовместимый ответ сервиса. Обновите страницу позже.');
+    throw new Error('Incompatible service response. Refresh the page later.');
   }
 }
 export function useResource<T>(

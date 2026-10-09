@@ -31,7 +31,7 @@ try {
   browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
   await page.goto('http://127.0.0.1:5199');
-  await page.getByRole('heading', { name: 'Сканер Solana-токенов', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Solana token scanner', exact: true }).waitFor();
   console.log('Compiled API/worker and browser frontend started successfully');
 } finally {
   await browser?.close();

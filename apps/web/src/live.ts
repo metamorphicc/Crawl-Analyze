@@ -11,7 +11,7 @@ export function useLiveJob(id: string) {
   const [job, setJob] = useState<JobDetails>(),
     [report, setReport] = useState<AnalysisReport>(),
     [error, setError] = useState(''),
-    [connection, setConnection] = useState('Подключаемся…');
+    [connection, setConnection] = useState('Connecting…');
   useEffect(() => {
     setJob(undefined);
     setReport(undefined);
@@ -30,7 +30,7 @@ export function useLiveJob(id: string) {
       source = new EventSource(
         apiUrl(`/v1/scans/${encodeURIComponent(id)}/events?after=${cursor}`),
       );
-      source.onopen = () => setConnection('Обновления подключены');
+      source.onopen = () => setConnection('Live updates connected');
       source.onmessage = (event) => {
         try {
           const parsed = scanEventSchema.parse(JSON.parse(event.data));
@@ -38,13 +38,13 @@ export function useLiveJob(id: string) {
           cursor = parsed.id;
           void update();
         } catch {
-          setConnection('Проверяем состояние скана');
+          setConnection('Checking scan status');
         }
       };
       source.onerror = () => {
         source?.close();
         if (!terminal && !controller.signal.aborted) {
-          setConnection('Прямой канал прерван; проверяем состояние');
+          setConnection('Live connection interrupted; checking status');
           reconnect = setTimeout(connect, 5000);
         }
       };
@@ -69,7 +69,7 @@ export function useLiveJob(id: string) {
           });
           if (controller.signal.aborted) return;
           if (final.identity.mint !== details.mint || final.jobId !== id)
-            throw new Error('Отчёт не соответствует скану.');
+            throw new Error('Report does not match the scan.');
           setReport(final);
         }
         setError('');
@@ -79,7 +79,7 @@ export function useLiveJob(id: string) {
           source?.close();
           if (reconnect) clearTimeout(reconnect);
           clearCancellation(id);
-          setConnection('Скан остановлен');
+          setConnection('Scan ended');
         }
       } catch (e) {
         if (!controller.signal.aborted) {

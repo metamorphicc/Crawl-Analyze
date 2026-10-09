@@ -25,17 +25,22 @@ import { date, stateLabel, phaseLabel } from './format.js';
 import { useLiveJob } from './live.js';
 import { ReportView } from './report.js';
 import { Watchlist } from './watches.js';
+import { Bug, ScanLine, Bookmark, BookOpen, Activity, FileSearch } from 'lucide-react';
+import '@fontsource/space-grotesk/400.css';
+import '@fontsource/space-grotesk/500.css';
+import '@fontsource/space-grotesk/600.css';
+import '@fontsource/ibm-plex-mono/400.css';
 import './base.css';
 const root = createRootRoute({
   component: Layout,
   notFoundComponent: () => (
     <p role="alert">
-      Страница не найдена. <Link to="/">Открыть сканер</Link>
+      Page not found. <Link to="/">Open scanner</Link>
     </p>
   ),
   errorComponent: () => (
     <p role="alert">
-      Не удалось открыть страницу. <a href="/">Вернуться к сканеру</a>
+      Unable to open this page. <a href="/">Return to scanner</a>
     </p>
   ),
 });
@@ -81,25 +86,47 @@ declare module '@tanstack/react-router' {
 function Layout() {
   const location = useRouterState({ select: (s) => s.location.pathname });
   useEffect(() => {
-    document.title = `${location.startsWith('/report') ? 'Отчёт' : location.startsWith('/token') ? 'Токен' : 'Сканер'} · CrawlSpider`;
+    document.title = `${location.startsWith('/report') ? 'Report' : location.startsWith('/token') ? 'Token' : 'Scanner'} · CrawlSpider`;
     document.getElementById('content')?.focus();
   }, [location]);
   return (
     <>
       <a className="skip" href="#content">
-        К содержимому
+        Skip to content
       </a>
-      <header>
-        <nav aria-label="Основная навигация">
-          <Link to="/">CrawlSpider / Сканер</Link>
-          <Link to="/watchlist">Наблюдение</Link>
-          <Link to="/methodology">Методология</Link>
-          <Link to="/status">Состояние сервисов</Link>
-        </nav>
+      <header className="site-header">
+        <div className="header-inner">
+          <Link to="/" className="brand">
+            <Bug size={24} aria-hidden="true" />
+            CrawlSpider
+          </Link>
+          <nav aria-label="Main navigation">
+            <Link to="/" activeOptions={{ exact: true }}>
+              <ScanLine size={16} aria-hidden="true" />
+              Scanner
+            </Link>
+            <Link to="/watchlist">
+              <Bookmark size={16} aria-hidden="true" />
+              Watchlist
+            </Link>
+            <Link to="/methodology">
+              <BookOpen size={16} aria-hidden="true" />
+              Methodology
+            </Link>
+            <Link to="/status">
+              <Activity size={16} aria-hidden="true" />
+              Services
+            </Link>
+          </nav>
+        </div>
       </header>
       <main id="content" tabIndex={-1}>
         <Outlet />
       </main>
+      <footer className="site-footer">
+        <span>CrawlSpider · Solana</span>
+        <span>Distribution risk - a heuristic.</span>
+      </footer>
     </>
   );
 }
@@ -138,8 +165,8 @@ function Scanner({ initial = '' }: { initial?: string }) {
     }
   }
   return (
-    <form onSubmit={submit} aria-label="Сканирование токена">
-      <label htmlFor="token-input">Mint или ссылка pump.fun / Axiom / GMGN</label>
+    <form className="scanner-form" onSubmit={submit} aria-label="Token scanner" aria-busy={busy}>
+      <label htmlFor="token-input">Mint or pump.fun / Axiom / GMGN link</label>
       <input
         id="token-input"
         type="text"
@@ -149,31 +176,38 @@ function Scanner({ initial = '' }: { initial?: string }) {
         maxLength={512}
         autoComplete="off"
         spellCheck={false}
+        placeholder="Mint address or https://pump.fun/coin/…"
+        aria-describedby="scan-help"
+        aria-invalid={!!error}
       />
-      <label htmlFor="mode">Режим </label>
-      <select
-        id="mode"
-        value={mode}
-        onChange={(e) => setMode(e.target.value as 'preview' | 'deep')}
-      >
-        <option value="deep">Глубокий анализ</option>
-        <option value="preview">Предварительный анализ</option>
-      </select>{' '}
-      <button type="submit" disabled={busy || !available}>
-        {busy ? 'Отправляем…' : 'Сканировать'}
-      </button>
-      <p>
-        Предварительный режим проверяет распределение и рынки. Глубокий добавляет доступную историю
-        и связи кошельков.
+      <div className="scan-controls">
+        <div className="mode-field">
+          <label htmlFor="mode">Mode </label>
+          <select
+            id="mode"
+            value={mode}
+            onChange={(e) => setMode(e.target.value as 'preview' | 'deep')}
+          >
+            <option value="deep">Deep analysis</option>
+            <option value="preview">Preview analysis</option>
+          </select>
+        </div>
+        <button className="primary" type="submit" disabled={busy || !available} aria-busy={busy}>
+          {busy ? 'Submitting…' : 'Scan'}
+        </button>
+      </div>
+      <p className="helper" id="scan-help">
+        Preview checks distribution and markets. Deep analysis adds available wallet history and
+        relationships.
       </p>
       {status.isPending ? (
-        <p role="status">Проверяем доступность сканирования…</p>
+        <p role="status">Checking scanner availability…</p>
       ) : (
         !available && (
           <p role="status">
             {status.error
               ? errorMessage(status.error)
-              : 'Сканирование временно недоступно: источники данных ещё не подключены или сервисы восстанавливаются.'}
+              : 'Scanning is temporarily unavailable: data sources are not connected yet or services are recovering.'}
           </p>
         )
       )}
@@ -185,22 +219,37 @@ function Home() {
   const recent = useResource('/v1/reports', recentReportsSchema, true);
   return (
     <>
-      <h1>Сканер Solana-токенов</h1>
-      <Scanner />
-      <details>
-        <summary>Поддерживаемые ссылки</summary>
-        <p>
-          pump.fun/coin/… · gmgn.ai/sol/token/… · axiom.trade/meme/…?chain=sol или адрес mint. Для
-          неподдерживаемого пула используйте mint.
-        </p>
-      </details>
-      <Queue />
-      <section>
-        <h2>Последние отчёты</h2>
-        {recent.isPending && <p role="status">Загружаем…</p>}
+      <div className="page-heading">
+        <h1>Solana token scanner</h1>
+        <p>Holder distribution, wallet relationships and on-chain evidence.</p>
+      </div>
+      <div className="scanner-workspace">
+        <div>
+          <Scanner />
+          <details>
+            <summary>Supported links</summary>
+            <p>
+              pump.fun/coin/… · gmgn.ai/sol/token/… · axiom.trade/meme/…?chain=sol or a mint
+              address. For unsupported pools, use the mint.
+            </p>
+          </details>
+        </div>
+        <Queue />
+      </div>
+      <section className="recent-reports">
+        <h2>Recent reports</h2>
+        {recent.isPending && <p role="status">Loading…</p>}
         {recent.error && <p role="alert">{errorMessage(recent.error)}</p>}
-        {recent.data?.length === 0 && <p>Завершённых сканов пока нет.</p>}
-        <ul>
+        {recent.data?.length === 0 && (
+          <div className="empty-state">
+            <FileSearch size={24} aria-hidden="true" />
+            <p>
+              <strong>No completed scans yet.</strong>
+            </p>
+            <p>Completed reports will appear here with their timestamps and data quality.</p>
+          </div>
+        )}
+        <ul className="report-list">
           {recent.data?.map((r) => (
             <li key={r.id}>
               <Link to="/report/$id" params={{ id: r.id }}>
@@ -217,22 +266,22 @@ function Home() {
 function Queue() {
   const queue = useResource('/v1/queue', queueStatusSchema, true);
   return (
-    <section>
-      <h2>Очередь</h2>
+    <section className="queue-panel">
+      <h2>Queue</h2>
       {queue.error ? (
         <p role="alert">{errorMessage(queue.error)}</p>
       ) : !queue.data ? (
-        <p role="status">Загружаем очередь…</p>
+        <p role="status">Loading queue…</p>
       ) : (
         <>
           <p>
-            Ожидают:{' '}
+            Queued:{' '}
             {queue.data.lanes.filter((l) => l.state === 'queued').reduce((n, l) => n + l.count, 0)}.
-            Выполняются:{' '}
+            Running:{' '}
             {queue.data.lanes.filter((l) => l.state === 'running').reduce((n, l) => n + l.count, 0)}
-            . Вместимость: {queue.data.capacity}.
+            . Capacity: {queue.data.capacity}.
           </p>
-          <p>Доступность источников указана на странице состояния.</p>
+          <p>See the status page for data source availability.</p>
         </>
       )}
     </section>
@@ -242,10 +291,10 @@ function Token() {
   const { mint } = token.useParams(),
     { job } = token.useSearch();
   if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint))
-    return <p role="alert">Некорректный адрес Solana.</p>;
+    return <p role="alert">Invalid Solana address.</p>;
   return (
     <>
-      <h1>Токен {mint}</h1>
+      <h1>Token {mint}</h1>
       <Scanner key={mint} initial={mint} />
       {job ? <Live key={job} id={job} mint={mint} /> : <Latest key={mint} mint={mint} />}
     </>
@@ -262,22 +311,21 @@ function Latest({ mint }: { mint: string }) {
   if (query.error)
     return (
       <p role="alert">
-        {errorMessage(query.error)}{' '}
-        <button onClick={() => void query.refetch()}>Повторить загрузку</button>
+        {errorMessage(query.error)} <button onClick={() => void query.refetch()}>Retry</button>
       </p>
     );
-  if (!query.data) return <p role="status">Загружаем отчёт…</p>;
+  if (!query.data) return <p role="status">Loading report…</p>;
   return query.data.report && query.data.report.identity.mint === mint ? (
     <ReportView report={query.data.report} />
   ) : (
-    <p>Отчёт по токену ещё не создан. Запустите сканирование.</p>
+    <p>No report exists for this token yet. Start a scan.</p>
   );
 }
 function Live({ id, mint }: { id: string; mint: string }) {
   const { job, report, error, connection } = useLiveJob(id),
     [cancelError, setCancelError] = useState(''),
     [cancelling, setCancelling] = useState(false);
-  if (job && job.mint !== mint) return <p role="alert">Этот скан относится к другому токену.</p>;
+  if (job && job.mint !== mint) return <p role="alert">This scan belongs to another token.</p>;
   const active = job && ['queued', 'running'].includes(job.state),
     capability = cancellation(id);
   async function cancel() {
@@ -297,24 +345,24 @@ function Live({ id, mint }: { id: string; mint: string }) {
   }
   return (
     <>
-      <section aria-label="Состояние скана">
-        <h2>Скан {id}</h2>
+      <section aria-label="Scan status">
+        <h2>Scan {id}</h2>
         <p role="status">
           {job
             ? `${stateLabel[job.state]} · ${phaseLabel[job.phase] || job.phase}`
-            : 'Загружаем состояние…'}
+            : 'Loading status…'}
         </p>
         <p>{connection}</p>
         {job?.deadlineAt && active && (
           <p>
-            Предельное время: {date(job.deadlineAt)}. Попытка: {job.attempt}.
+            Deadline: {date(job.deadlineAt)}. Attempt: {job.attempt}.
           </p>
         )}
         {error && <p role="alert">{error}</p>}
-        {job?.errorCode && <p role="alert">Код: {job.errorCode}. Можно запустить новый скан.</p>}
+        {job?.errorCode && <p role="alert">Code: {job.errorCode}. You can start a new scan.</p>}
         {active && capability && (
           <button disabled={cancelling} onClick={() => void cancel()}>
-            {cancelling ? 'Отменяем…' : 'Отменить скан'}
+            {cancelling ? 'Cancelling…' : 'Cancel scan'}
           </button>
         )}
         {cancelError && <p role="alert">{cancelError}</p>}
@@ -330,16 +378,15 @@ function Historical() {
     query = useResource(`/v1/reports/${encodeURIComponent(id)}`, reportSchema);
   return (
     <>
-      <h1>Исторический отчёт</h1>
+      <h1>Historical report</h1>
       {query.error ? (
         <p role="alert">
-          {errorMessage(query.error)}{' '}
-          <button onClick={() => void query.refetch()}>Повторить загрузку</button>
+          {errorMessage(query.error)} <button onClick={() => void query.refetch()}>Retry</button>
         </p>
       ) : query.data ? (
         <ReportView report={query.data} historical />
       ) : (
-        <p role="status">Загружаем отчёт…</p>
+        <p role="status">Loading report…</p>
       )}
     </>
   );
@@ -348,34 +395,34 @@ function Status() {
   const query = useResource('/v1/status', serviceStatusSchema, true);
   return (
     <>
-      <h1>Состояние сервисов</h1>
+      <h1>Service status</h1>
       {query.error ? (
         <p role="alert">{errorMessage(query.error)}</p>
       ) : !query.data ? (
-        <p role="status">Проверяем…</p>
+        <p role="status">Checking…</p>
       ) : (
         <>
           <p role="status">
-            {query.data.status === 'ready' ? 'Инфраструктура доступна' : 'Работа ограничена'}
+            {query.data.status === 'ready' ? 'Infrastructure available' : 'Service degraded'}
           </p>
           <ul>
             {Object.entries(query.data.dependencies).map(([name, ok]) => (
               <li key={name}>
-                {name}: {ok ? 'доступен' : 'недоступен'}
+                {name}: {ok ? 'available' : 'unavailable'}
               </li>
             ))}
           </ul>
-          <h2>Источники и каналы</h2>
+          <h2>Data sources and channels</h2>
           <ul>
             {Object.entries(query.data.capabilities).map(([name, ok]) => (
               <li key={name}>
-                {name}: {ok ? 'настроен' : 'не подключён'}
+                {name}: {ok ? 'configured' : 'not connected'}
               </li>
             ))}
           </ul>
           <p>
-            «Настроен» означает наличие конфигурации. Доступность внешнего источника подтверждает
-            выполненный скан.
+            “Configured” means settings are present. A completed scan confirms external source
+            availability.
           </p>
         </>
       )}
@@ -386,44 +433,42 @@ function Status() {
 function Methodology() {
   return (
     <>
-      <h1>Методология</h1>
+      <h1>Methodology</h1>
       <p>
-        Риск распределения — эвристический балл от 0 до 100: больше означает больше наблюдаемых
-        признаков концентрации и координации. Это не вероятность мошенничества. Правила ещё не
-        откалиброваны по будущим исходам.
+        Distribution risk is a heuristic score from 0 to 100: higher values indicate more observed
+        signs of concentration and coordination. It is not a probability of fraud. Rules have not
+        yet been calibrated against future outcomes.
       </p>
       <p>
-        Полнота данных оценивается отдельно. Если обязательных данных недостаточно, балл недоступен.
-        Отсутствующая история не означает отсутствие торговли, а неполная выборка не доказывает
-        безопасное распределение.
+        Data completeness is assessed separately. The score is unavailable when required data is
+        insufficient. Missing history does not mean no trading occurred, and an incomplete sample
+        does not prove safe distribution.
       </p>
       <p>
-        Баланс держателя объединяет его токен-аккаунты. Знаменатель — проиндексированные балансы за
-        вычетом подтверждённой инфраструктуры. Постраничный снимок не атомарен; диапазон слотов и
-        сверка supply указаны в отчёте.
+        A holder balance combines its token accounts. The denominator is indexed balances minus
+        verified infrastructure. A paginated snapshot is not atomic; the report includes the slot
+        range and supply reconciliation.
       </p>
       <p>
-        Транзакции подтверждают взаимодействие адресов. Общий плательщик или похожие покупки сами по
-        себе не доказывают одного владельца. Группы общего контроля остаются гипотезами.
+        Transactions confirm interactions between addresses. A shared payer or similar purchases
+        alone do not prove shared ownership. Common-control groups remain hypotheses.
       </p>
       <p>
-        Ранние покупатели определяются в прочитанном окне истории. Порядок внутри слота требует
-        данных блока. Неизвестный порядок не является подтверждённым ранним входом.
+        Early buyers are identified within the observed history window. Ordering within a slot
+        requires block data. Unknown ordering does not confirm an early entry.
       </p>
       <p>
-        Изменение места в рейтинге не является продажей. Сравнение требует совместимых полных
-        снимков; покупка, продажа, перевод, выпуск и сжигание различаются по фактическим
-        инструкциям.
+        A ranking change is not a sale. Comparisons require compatible complete snapshots; buys,
+        sells, transfers, mints and burns are distinguished by actual instructions.
       </p>
       <p>
-        Сценарии моделируют продажу 25%, 50% и 100% отмеченного баланса в поддерживаемых рынках с
-        проверенными резервами и комиссиями. Они не предсказывают действия держателей. Неизвестные
-        рынки и расширения токенов могут сделать расчёт недоступным. USD-график внешнего источника
-        не используется в этих расчётах.
+        Scenarios model selling 25%, 50% and 100% of the flagged balance in supported markets with
+        verified reserves and fees. They do not predict holder actions. Unknown markets and token
+        extensions may prevent calculation. External USD charts are not used in these calculations.
       </p>
       <p>
-        Версии правил, условия срабатывания, причины неизвестных значений, время и доказательства
-        доступны в каждом отчёте.
+        Each report includes rule versions, trigger conditions, reasons for unknown values,
+        timestamps and evidence.
       </p>
     </>
   );

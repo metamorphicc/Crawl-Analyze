@@ -4,6 +4,17 @@ Updated: 2026-10-09, Asia/Novosibirsk.
 
 ## Current stage
 
+**Minimal UI checkpoint: basic styling and an English website while the main build remains paused.**
+
+Stage 12 checkpoint: `052a38e`. The site now has a shared dark palette, self-hosted fonts,
+active navigation, clear scan controls, queue and empty states, readable tables, evidence dialogs
+and matching chart colours. All website copy, accessibility labels and date formatting now use
+English. The footer uses a simple hyphen: "Distribution risk - a heuristic."
+Existing routes and backend behavior are preserved. Nine browser journeys passed before the final
+chart colours and English copy edits. Their text assertions were updated, but no further checks
+were run at the user's explicit request. The local preview is rebuilt for these changes.
+Final design/spider visuals still await the user's document. Stages 13–14 remain paused.
+
 **Stage 12: forward collection and reproducible evaluation implemented; empirical calibration pending.**
 
 Stage 11 checkpoint: `6537ff5`. Forward policy `forward-1` records immutable baselines, three

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { createChart, CandlestickSeries, type UTCTimestamp } from 'lightweight-charts';
+import { createChart, CandlestickSeries, ColorType, type UTCTimestamp } from 'lightweight-charts';
 import { marketChartSchema, type MarketChart } from '@crawlspider/contracts';
 import { useResource, errorMessage } from './api.js';
 import { date } from './format.js';
@@ -7,16 +7,18 @@ import { External } from './report.js';
 export function PriceChart({ mint }: { mint: string }) {
   const query = useResource(`/v1/tokens/${encodeURIComponent(mint)}/market`, marketChartSchema);
   if (query.data && query.data.mint !== mint)
-    return <p role="alert">Источник вернул свечи другого токена.</p>;
+    return <p role="alert">The source returned candles for another token.</p>;
   return query.error ? (
     <p role="alert">
       {errorMessage(query.error)}{' '}
-      <button onClick={() => void query.refetch()}>Повторить загрузку свечей</button>
+      <button onClick={() => void query.refetch()}>Retry candles</button>
     </p>
   ) : !query.data ? (
-    <p role="status">Загружаем свечи…</p>
+    <p role="status">Loading candles…</p>
   ) : query.data.status === 'unavailable' ? (
-    <p>График недоступен: {query.data.reasons.join(', ')}. Цена не заменена нулём.</p>
+    <p>
+      Chart unavailable: {query.data.reasons.join(', ')}. Missing prices are not replaced with zero.
+    </p>
   ) : (
     <Candles data={query.data} />
   );
@@ -28,12 +30,42 @@ function Candles({ data }: { data: MarketChart }) {
     if (!ref.current) return;
     let chart: ReturnType<typeof createChart> | undefined;
     try {
+      const styles = getComputedStyle(ref.current);
+      // Resolve the shared OKLCH palette to RGB for the chart library's colour parser.
+      const canvas = document.createElement('canvas'),
+        context = canvas.getContext('2d')!;
+      const color = (token: string) => {
+        context.fillStyle = styles.getPropertyValue(token).trim();
+        context.fillRect(0, 0, 1, 1);
+        const pixels = context.getImageData(0, 0, 1, 1).data;
+        return `rgb(${pixels[0]}, ${pixels[1]}, ${pixels[2]})`;
+      };
+      const surface = color('--color-paper-2'),
+        ink = color('--color-muted'),
+        rule = color('--color-rule'),
+        up = color('--color-accent'),
+        down = color('--color-error');
       chart = createChart(ref.current, {
         autoSize: true,
         height: 300,
-        layout: { attributionLogo: true },
+        layout: {
+          attributionLogo: true,
+          background: { type: ColorType.Solid, color: surface },
+          textColor: ink,
+          fontFamily: styles.fontFamily,
+        },
+        grid: { vertLines: { color: rule }, horzLines: { color: rule } },
+        rightPriceScale: { borderColor: rule },
+        timeScale: { borderColor: rule },
       });
-      const series = chart.addSeries(CandlestickSeries);
+      const series = chart.addSeries(CandlestickSeries, {
+        upColor: up,
+        downColor: down,
+        borderUpColor: up,
+        borderDownColor: down,
+        wickUpColor: up,
+        wickDownColor: down,
+      });
       series.setData(
         data.candles.map((c) => ({
           time: c.time as UTCTimestamp,
@@ -45,47 +77,48 @@ function Candles({ data }: { data: MarketChart }) {
       );
       chart.timeScale().fitContent();
     } catch {
-      setError('График не удалось отобразить. Данные доступны в таблице.');
+      setError('Unable to display the chart. Data is available in the table.');
     }
     return () => chart?.remove();
   }, [data]);
   return (
     <>
       <p>
-        GeckoTerminal · USD · интервал 5 минут · получено {date(data.observedAt)} · пул {data.pool}.
+        GeckoTerminal · USD · 5-minute interval · retrieved {date(data.observedAt)} · pool{' '}
+        {data.pool}.
       </p>
-      <p>Отрисовка использует округлённые цены. Значения источника сохранены в таблице.</p>
+      <p>The chart uses rounded prices. Exact source values are preserved in the table.</p>
       {data.candles.length > 0 && Date.now() - data.candles.at(-1)!.time * 1000 > 600000 && (
-        <p role="status">Устаревшие свечи: последняя торговая свеча старше 10 минут.</p>
+        <p role="status">Stale candles: the last trading candle is over 10 minutes old.</p>
       )}
       <p>
-        Последняя свеча:{' '}
+        Last candle:{' '}
         {data.candles.length
-          ? new Date(data.candles.at(-1)!.time * 1000).toLocaleString('ru-RU')
-          : 'нет'}
-        . Пропущенные интервалы не заполнены искусственно.
+          ? new Date(data.candles.at(-1)!.time * 1000).toLocaleString('en-US')
+          : 'no'}
+        . Missing intervals are not filled artificially.
       </p>
       {error && <p role="status">{error}</p>}
       <div
         ref={ref}
         className="chart"
         role="img"
-        aria-label="Свечи цены USD; значения доступны в таблице ниже"
+        aria-label="USD price candles; values are available in the table below"
       />
       <p>
         <External url="https://www.tradingview.com/">TradingView Lightweight Charts</External> ·{' '}
         <External url={`https://www.geckoterminal.com/solana/pools/${data.pool}`}>
-          Источник свечей
+          Candle source
         </External>
       </p>
       <details>
-        <summary>Таблица свечей (точные значения источника)</summary>
-        <div className="table-scroll" tabIndex={0} role="region" aria-label="Свечи USD">
+        <summary>Candle table (exact source values)</summary>
+        <div className="table-scroll" tabIndex={0} role="region" aria-label="USD candles">
           <table>
-            <caption>Свечи USD</caption>
+            <caption>USD candles</caption>
             <thead>
               <tr>
-                {['Время', 'Open', 'High', 'Low', 'Close', 'Volume'].map((h) => (
+                {['Time', 'Open', 'High', 'Low', 'Close', 'Volume'].map((h) => (
                   <th key={h} scope="col">
                     {h}
                   </th>
@@ -95,7 +128,7 @@ function Candles({ data }: { data: MarketChart }) {
             <tbody>
               {data.candles.map((c) => (
                 <tr key={c.time}>
-                  <td>{new Date(c.time * 1000).toLocaleString('ru-RU')}</td>
+                  <td>{new Date(c.time * 1000).toLocaleString('en-US')}</td>
                   <td>{c.open}</td>
                   <td>{c.high}</td>
                   <td>{c.low}</td>

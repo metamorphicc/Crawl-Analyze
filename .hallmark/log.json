@@ -1,0 +1,11 @@
+[
+  {
+    "date": "2026-10-09",
+    "macrostructure": "Workbench",
+    "theme": "Midnight adapted to existing product",
+    "nav": "workspace tabs",
+    "footer": "inline",
+    "enrichment": "none",
+    "brief": "CrawlSpider: minimal usable UI, final design deferred"
+  }
+]

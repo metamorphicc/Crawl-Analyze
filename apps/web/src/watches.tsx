@@ -37,7 +37,7 @@ export function Watchlist() {
           return;
         }
         if (Date.now() > Date.parse(link!.expiresAt))
-          throw new Error('Ссылка истекла. Начните привязку снова.');
+          throw new Error('Link expired. Start linking again.');
         if (!stop.signal.aborted) timer = setTimeout(() => void poll(), 3000);
       } catch (e) {
         if (!stop.signal.aborted) {
@@ -65,10 +65,10 @@ export function Watchlist() {
   }
   return (
     <>
-      <h1>Наблюдение</h1>
+      <h1>Watchlist</h1>
       {error && <p role="alert">{error}</p>}
       {me.isPending ? (
-        <p>Проверяем сессию…</p>
+        <p>Checking session…</p>
       ) : me.error ? (
         <p role="alert">{errorMessage(me.error)}</p>
       ) : me.data?.user ? (
@@ -76,19 +76,19 @@ export function Watchlist() {
       ) : (
         <>
           <p>
-            Привяжите Telegram для общего списка на сайте и в боте. Публичное сканирование доступно
-            без входа.
+            Link Telegram to share your watchlist between the website and bot. Public scanning
+            requires no sign-in.
           </p>
           <button onClick={() => void begin()} disabled={busy}>
-            Привязать Telegram
+            Link Telegram
           </button>
           {link && (
             <p>
-              Код: <strong>{link.code}</strong>.{' '}
+              Code: <strong>{link.code}</strong>.{' '}
               <a href={link.url} target="_blank" rel="noopener noreferrer">
-                Открыть бота
+                Open bot
               </a>
-              . Подтвердите совпадение кода в личном чате. Ссылка действует пять минут.
+              . Confirm the matching code in a private chat. The link expires in five minutes.
             </p>
           )}
         </>
@@ -134,7 +134,7 @@ function Personal({
       <p>
         Telegram ID: {user.id}.{' '}
         {user.pauseReason &&
-          `Доставка приостановлена: ${user.pauseReason}. Разблокируйте бота и включите уведомления.`}
+          `Delivery paused: ${user.pauseReason}. Unblock the bot and enable notifications.`}
       </p>
       {error && <p role="alert">{error}</p>}
       <form
@@ -144,10 +144,10 @@ function Personal({
         }}
       >
         <label>
-          Mint для наблюдения
+          Mint to watch
           <input value={mint} onChange={(e) => setMint(e.target.value)} required maxLength={44} />
         </label>
-        <button disabled={busy}>Добавить</button>
+        <button disabled={busy}>Add</button>
       </form>
       {watches.error ? (
         <p role="alert">{errorMessage(watches.error)}</p>
@@ -155,15 +155,15 @@ function Personal({
         <ul>
           {watches.data?.map((w) => (
             <li key={w.mint}>
-              <a href={`/token/${w.mint}`}>{w.mint}</a> — проверка{' '}
-              {new Date(w.nextCheckAt).toLocaleString()};{' '}
-              {w.pendingJobId ? 'в очереди / работе' : w.lastQuality || 'исходный отчёт ожидается'}{' '}
-              {w.lastReportId && <a href={`/report/${w.lastReportId}`}>Отчёт</a>}{' '}
+              <a href={`/token/${w.mint}`}>{w.mint}</a> - check{' '}
+              {new Date(w.nextCheckAt).toLocaleString('en-US')};{' '}
+              {w.pendingJobId ? 'queued / running' : w.lastQuality || 'baseline report pending'}{' '}
+              {w.lastReportId && <a href={`/report/${w.lastReportId}`}>Report</a>}{' '}
               <button
                 disabled={busy}
                 onClick={() => void mutate(`/v1/watches/${w.mint}`, 'DELETE')}
               >
-                Убрать
+                Remove
               </button>
             </li>
           ))}
@@ -175,32 +175,32 @@ function Personal({
           try {
             void mutate('/v1/settings', 'PATCH', notificationSettingsSchema.parse(settings));
           } catch {
-            setError('Проверьте диапазоны настроек.');
+            setError('Check the settings ranges.');
           }
         }}
       >
-        <h2>Уведомления</h2>
+        <h2>Notifications</h2>
         <label>
           <input
             type="checkbox"
             checked={settings.enabled}
             onChange={(e) => setSettings({ ...settings, enabled: e.target.checked })}
           />
-          Включены
+          Enabled
         </label>
         {(
           [
             {
               key: 'cadenceMinutes',
-              label: 'Минимальный интервал доставки, минут',
+              label: 'Minimum delivery interval, minutes',
               min: 15,
               max: 1440,
             },
-            { key: 'utcOffsetMinutes', label: 'Сдвиг UTC, минут', min: -720, max: 840 },
-            { key: 'riskDelta', label: 'Порог изменения риска', min: 5, max: 100 },
+            { key: 'utcOffsetMinutes', label: 'UTC offset, minutes', min: -720, max: 840 },
+            { key: 'riskDelta', label: 'Risk change threshold', min: 5, max: 100 },
             {
               key: 'positionDeltaBps',
-              label: 'Порог изменения позиции, bps от оборотного предложения',
+              label: 'Position change threshold, bps of eligible supply',
               min: 10,
               max: 10000,
             },
@@ -229,13 +229,13 @@ function Personal({
               })
             }
           />
-          Тихие часы
+          Quiet hours
         </label>
         {settings.quietHours && (
           <>
             {(['start', 'end'] as const).map((k) => (
               <label key={k}>
-                {k === 'start' ? 'Начало' : 'Конец'}
+                {k === 'start' ? 'Start' : 'End'}
                 <input
                   type="number"
                   min={0}
@@ -251,29 +251,31 @@ function Personal({
               </label>
             ))}
             <p>
-              Одинаковые часы означают тишину весь день. Сдвиг фиксированный, без автоматического
-              перехода на летнее время.
+              Matching hours mute notifications all day. The offset is fixed, with no automatic
+              daylight-saving changes.
             </p>
           </>
         )}
-        <button disabled={busy}>Сохранить настройки</button>
+        <button disabled={busy}>Save settings</button>
       </form>
       <p>
-        Проверки планируются каждые 15 минут при доступных источниках и бюджете. Несопоставимые
-        снимки не вызывают уведомлений. Накопленные изменения объединяются, в сообщении показаны
-        последние; подробности находятся в отчётах.
+        Checks are scheduled every 15 minutes when data sources and budget are available.
+        Incompatible snapshots do not trigger alerts. Accumulated changes are batched, with the
+        latest shown in each message; reports contain the details.
       </p>
       <button disabled={busy} onClick={() => void mutate('/v1/logout', 'POST')}>
-        Выйти
+        Sign out
       </button>{' '}
       <button disabled={busy} onClick={() => void mutate('/v1/unlink', 'POST')}>
-        Отключить все сессии сайта
+        Revoke all website sessions
       </button>
       <details>
-        <summary>Удаление персональных данных</summary>
-        <p>Будут удалены списки, настройки и сессии. Публичные отчёты о блокчейне сохраняются.</p>
+        <summary>Delete personal data</summary>
+        <p>
+          Watchlists, settings and sessions will be deleted. Public blockchain reports are retained.
+        </p>
         <button disabled={busy} onClick={() => void mutate('/v1/me', 'DELETE')}>
-          Удалить мои данные
+          Delete my data
         </button>
       </details>
     </>

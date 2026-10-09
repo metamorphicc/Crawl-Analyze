@@ -13,7 +13,7 @@ export function External({ url, children }: { url: string; children: ReactNode }
       {children}
     </a>
   ) : (
-    <span>{children} (ссылка недоступна)</span>
+    <span>{children} (link unavailable)</span>
   );
 }
 const ownerLink = (owner: string) => (
@@ -68,17 +68,19 @@ function Table({
           </tbody>
         </table>
       </div>
-      {rows.length === 0 && <p>Записей в отчёте нет. Это не доказывает отсутствие активности.</p>}
+      {rows.length === 0 && (
+        <p>No records in this report. This does not prove a lack of activity.</p>
+      )}
       {pages > 1 && (
         <div className="actions">
           <button disabled={actual === 0} onClick={() => setPage(actual - 1)}>
-            Предыдущая страница
+            Previous page
           </button>
           <span role="status">
-            Страница {actual + 1} из {pages}
+            Page {actual + 1} of {pages}
           </span>
           <button disabled={actual === pages - 1} onClick={() => setPage(actual + 1)}>
-            Следующая страница
+            Next page
           </button>
         </div>
       )}
@@ -114,9 +116,9 @@ export function ReportView({
   const share = async () => {
     try {
       await navigator.clipboard.writeText(new URL(`/report/${r.id}`, location.origin).href);
-      setCopied('Ссылка скопирована');
+      setCopied('Link copied');
     } catch {
-      setCopied('Копирование недоступно. Откройте ссылку на отчёт и скопируйте адрес страницы.');
+      setCopied('Copying is unavailable. Open the report link and copy the page address.');
     }
   };
   const download = () => {
@@ -130,38 +132,38 @@ export function ReportView({
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   return (
-    <article aria-label="Отчёт анализа">
+    <article aria-label="Analysis report">
       <header>
-        <h2>{provisional ? 'Предварительный результат' : 'Отчёт анализа'}</h2>
+        <h2>{provisional ? 'Preview result' : 'Analysis report'}</h2>
         <p>
-          {stateLabel[r.mode]} · {date(r.observedAt)} · качество: {quality.status}
+          {stateLabel[r.mode]} · {date(r.observedAt)} · quality: {quality.status}
         </p>
         {provisional && (
-          <p role="status">Промежуточный результат скана. Итоговый отчёт ещё не сохранён.</p>
+          <p role="status">Intermediate scan result. The final report has not been saved yet.</p>
         )}
         {stale && (
           <p role="status">
-            Устаревший снимок: старше 2 минут. Текущие балансы и резервы могли измениться.
+            Stale snapshot: over 2 minutes old. Current balances and reserves may have changed.
           </p>
         )}
-        {historical && <p>Исторический отчёт сохраняет значения на время анализа.</p>}
+        {historical && <p>Historical reports preserve values at the time of analysis.</p>}
         <p>
           Mint: {r.identity.mint}. Decimals: {decimals}. Supply:{' '}
           {units(r.identity.supply, decimals)} (raw: {r.identity.supply}).
         </p>
         <p>
-          Mint authority: {r.identity.mintAuthority ?? 'отозвана'} · Freeze authority:{' '}
-          {r.identity.freezeAuthority ?? 'отозвана'}
+          Mint authority: {r.identity.mintAuthority ?? 'revoked'} · Freeze authority:{' '}
+          {r.identity.freezeAuthority ?? 'revoked'}
         </p>
         <p>
-          Источник: {r.identity.provenance.provider}; commitment: {r.identity.provenance.commitment}
-          ; слот: {r.identity.provenance.slot ?? 'неизвестно'}.
+          Source: {r.identity.provenance.provider}; commitment: {r.identity.provenance.commitment};
+          slot: {r.identity.provenance.slot ?? 'unknown'}.
         </p>
         <p>
-          Версии: контракт {r.contractVersion}; анализ {r.analysisVersion}; парсер {r.parserVersion}
-          .
+          Versions: contract {r.contractVersion}; analysis {r.analysisVersion}; parser{' '}
+          {r.parserVersion}.
         </p>
-        <nav aria-label="Терминалы">
+        <nav aria-label="Terminals">
           {Object.entries(r.links).map(([name, url]) => (
             <External key={name} url={url}>
               {name === 'pump'
@@ -178,57 +180,55 @@ export function ReportView({
         <div className="actions">
           {!provisional && (
             <>
-              <a href={`/watchlist?mint=${r.identity.mint}`}>Наблюдать токен</a>
+              <a href={`/watchlist?mint=${r.identity.mint}`}>Watch token</a>
               <Link to="/report/$id" params={{ id: r.id }}>
-                Постоянная ссылка на отчёт
+                Permanent report link
               </Link>
-              <button onClick={() => void share()}>Скопировать ссылку</button>
+              <button onClick={() => void share()}>Copy link</button>
             </>
           )}
-          <button onClick={download}>
-            Скачать JSON{provisional ? ' предварительного результата' : ''}
-          </button>
+          <button onClick={download}>Download JSON{provisional ? ' preview result' : ''}</button>
           <Link to="/token/$mint" params={{ mint: r.identity.mint }} search={{ job: undefined }}>
-            Открыть токен
+            Open token
           </Link>
         </div>
         {copied && <p role="status">{copied}</p>}
       </header>
       <section>
-        <h3>Риск распределения</h3>
+        <h3>Distribution risk</h3>
         <p>
-          Риск: {r.risk.riskScore === null ? 'Недостаточно данных' : `${r.risk.riskScore}/100`} ·{' '}
+          Risk: {r.risk.riskScore === null ? 'Insufficient data' : `${r.risk.riskScore}/100`} ·{' '}
           {r.risk.classification}
         </p>
         <p>
-          Полнота данных: {r.risk.confidence.dataCompleteness}%. Это покрытие данных, а не точность
-          прогноза. Эвристика не откалибрована.
+          Data completeness: {r.risk.confidence.dataCompleteness}%. This measures data coverage, not
+          prediction accuracy. The heuristic is not calibrated.
         </p>
         <p>
-          Наблюдаемые баллы: {r.risk.observedRiskPoints}. При недостатке данных они не заменяют
-          итоговый балл.
+          Observed points: {r.risk.observedRiskPoints}. With insufficient data, these do not replace
+          the final score.
         </p>
         <Reasons values={r.risk.eligibilityReasons} />
         <Reasons values={r.risk.confidence.reasons} />
         <p>
-          Держателей в индексе: {metrics.ownerCount}. Top 1: {percent(metrics.top1Bps)} · Top 10:{' '}
-          {percent(metrics.top10Bps)} · наибольшая гипотеза контроля:{' '}
+          Indexed holders: {metrics.ownerCount}. Top 1: {percent(metrics.top1Bps)} · Top 10:{' '}
+          {percent(metrics.top10Bps)} · largest control hypothesis:{' '}
           {percent(metrics.largestHypothesisBps)}.
         </p>
         <p>
-          Отмеченный баланс: {units(metrics.flaggedBalance, decimals)} (
-          {percent(metrics.flaggedBps)}). Знаменатель: {units(metrics.eligibleBalance, decimals)};
-          подтверждённая инфраструктура исключена: {units(metrics.excludedBalance, decimals)}.
+          Flagged balance: {units(metrics.flaggedBalance, decimals)} ({percent(metrics.flaggedBps)}
+          ). Denominator: {units(metrics.eligibleBalance, decimals)}; verified infrastructure
+          excluded: {units(metrics.excludedBalance, decimals)}.
         </p>
         <Table
-          title="Правила риска"
-          heads={['Правило', 'Состояние / баллы', 'Условие / наблюдение', 'Доказательства']}
+          title="Risk rules"
+          heads={['Rule', 'Status / points', 'Threshold / observed', 'Evidence']}
           rows={r.risk.rules.map((rule) => ({
             id: rule.id,
             cells: () => [
               rule.id,
               `${rule.status} / ${rule.points}`,
-              `${rule.threshold} / ${rule.observed ?? 'неизвестно'}`,
+              `${rule.threshold} / ${rule.observed ?? 'unknown'}`,
               <>
                 {rule.evidenceIds.map((id) => {
                   const evidence = r.graph.edges.find((e) => e.id === id);
@@ -246,20 +246,20 @@ export function ReportView({
         />
       </section>
       <section>
-        <h3>Качество и ограничения</h3>
+        <h3>Quality and limitations</h3>
         <p>
-          Перечисление держателей: {r.snapshot.enumerationComplete ? 'завершено' : 'неполное'}.
-          Supply сверено: {quality.supplyReconciled ? 'да' : 'нет'}. Снимок не атомарен.
+          Holder enumeration: {r.snapshot.enumerationComplete ? 'complete' : 'partial'}. Supply
+          reconciled: {quality.supplyReconciled ? 'yes' : 'no'}. The snapshot is not atomic.
         </p>
         <p>
-          Слоты: {quality.minSlot ?? 'неизвестно'} — {quality.maxSlot ?? 'неизвестно'}; индекс:{' '}
-          {quality.indexedSlot ?? 'неизвестно'}; время: {date(quality.observedAt)}.
+          Slots: {quality.minSlot ?? 'unknown'} - {quality.maxSlot ?? 'unknown'}; index:{' '}
+          {quality.indexedSlot ?? 'unknown'}; time: {date(quality.observedAt)}.
         </p>
         <Reasons values={[...quality.reasons, ...r.limitations, ...r.graph.limitations]} />
       </section>
       <section>
-        <h3>Держатели</h3>
-        <label htmlFor={`owner-search-${r.id}`}>Поиск держателя</label>
+        <h3>Holders</h3>
+        <label htmlFor={`owner-search-${r.id}`}>Search holders</label>
         <input
           id={`owner-search-${r.id}`}
           type="search"
@@ -268,8 +268,8 @@ export function ReportView({
         />
         <Table
           key={search}
-          title="Держатели"
-          heads={['Owner', 'Баланс / raw', 'Исключено', 'Заморожено / делегировано', 'Аккаунты']}
+          title="Holders"
+          heads={['Owner', 'Balance / raw', 'Excluded', 'Frozen / delegated', 'Accounts']}
           rows={r.snapshot.holders
             .filter((h) => h.owner.includes(search))
             .map((h) => ({
@@ -284,7 +284,7 @@ export function ReportView({
                 units(h.excludedAmount, decimals),
                 `${units(h.frozenAmount, decimals)} / ${units(h.delegatedAmount, decimals)}`,
                 <details>
-                  <summary>{h.accounts.length} аккаунтов</summary>
+                  <summary>{h.accounts.length} accounts</summary>
                   <ul>
                     {h.accounts.map((a) => (
                       <li key={a}>{ownerLink(a)}</li>
@@ -296,14 +296,14 @@ export function ReportView({
         />
       </section>
       <section>
-        <h3>Связи и доказательства</h3>
+        <h3>Relationships and evidence</h3>
         <p>
-          Взаимодействие адресов не доказывает личность владельца. Предполагаемый общий контроль и
-          сходство поведения остаются гипотезами.
+          Address interactions do not prove owner identity. Suspected common control and behavioral
+          similarity remain hypotheses.
         </p>
         <Table
-          title="Связи кошельков"
-          heads={['Откуда', 'Куда', 'Тип / сила', 'Уверенность', 'Доказательство']}
+          title="Wallet relationships"
+          heads={['From', 'To', 'Type / strength', 'Confidence', 'Evidence']}
           rows={r.graph.edges.map((e) => ({
             id: e.id,
             cells: () => [
@@ -311,17 +311,17 @@ export function ReportView({
               ownerLink(e.to),
               `${e.kind} / ${e.strength}`,
               e.confidence,
-              <button onClick={() => setEdge(e)}>Открыть доказательство</button>,
+              <button onClick={() => setEdge(e)}>Open evidence</button>,
             ],
           }))}
         />
         <Table
-          title="Гипотезы общего контроля"
-          heads={['Группа', 'Баланс', 'Owners', 'Доказательства']}
+          title="Common-control hypotheses"
+          heads={['Group', 'Balance', 'Owners', 'Evidence']}
           rows={r.graph.controlHypotheses.map((h) => ({
             id: h.id,
             cells: () => [
-              `${h.id} · личность не доказана`,
+              `${h.id} · identity not proven`,
               units(h.amount, decimals),
               h.owners.join(', '),
               h.evidenceIds.join(', '),
@@ -330,10 +330,10 @@ export function ReportView({
         />
       </section>
       <section>
-        <h3>История кошельков</h3>
+        <h3>Wallet history</h3>
         <Table
-          title="Наблюдаемая история"
-          heads={['Owner', 'Вход', 'Предыдущая торговля', 'Покрытие / причины']}
+          title="Observed history"
+          heads={['Owner', 'Entry', 'Prior trading', 'Coverage / reasons']}
           rows={r.signals.map((s) => ({
             id: s.owner,
             cells: () => [
@@ -341,17 +341,17 @@ export function ReportView({
               s.entry ? (
                 <>
                   <External url={`https://solscan.io/tx/${encodeURIComponent(s.entry.signature)}`}>
-                    {s.entry.kind} · слот {s.entry.slot}
+                    {s.entry.kind} · slot {s.entry.slot}
                   </External>
                   <p>{units(s.entry.amount, decimals)}</p>
                 </>
               ) : (
-                'неизвестно'
+                'unknown'
               ),
-              `${s.priorTrading} · ${s.priorTradeCount ?? 'неизвестно'}`,
+              `${s.priorTrading} · ${s.priorTradeCount ?? 'unknown'}`,
               <>
-                {s.coverage.status} · {s.coverage.decoded}/{s.coverage.signatures} · окно:{' '}
-                {s.coverage.oldestSlot ?? '?'} — {s.coverage.newestSlot ?? '?'}
+                {s.coverage.status} · {s.coverage.decoded}/{s.coverage.signatures} · window:{' '}
+                {s.coverage.oldestSlot ?? '?'} - {s.coverage.newestSlot ?? '?'}
                 <Reasons values={[...s.coverage.reasons, ...s.reasons]} />
               </>,
             ],
@@ -359,30 +359,30 @@ export function ReportView({
         />
       </section>
       <section>
-        <h3>Ранние покупатели</h3>
+        <h3>Early buyers</h3>
         {!r.earlyBuyers ? (
-          <p>Эти данные не читались в данном отчёте.</p>
+          <p>This data was not read for this report.</p>
         ) : (
           <>
             <p>
-              Статус: {r.earlyBuyers.status}. Прочитанное окно не гарантирует полный список всех
-              покупателей.
+              Status: {r.earlyBuyers.status}. The observed window does not guarantee a complete list
+              of buyers.
             </p>
             <Reasons values={r.earlyBuyers.reasons} />
             {r.earlyBuyers.launch && (
               <p>
-                Наблюдаемый запуск:{' '}
+                Observed launch:{' '}
                 <External
                   url={`https://solscan.io/tx/${encodeURIComponent(r.earlyBuyers.launch.signature)}`}
                 >
                   {r.earlyBuyers.launch.signature}
                 </External>
-                , слот {r.earlyBuyers.launch.slot}.
+                , slot {r.earlyBuyers.launch.slot}.
               </p>
             )}
             <Table
-              title="Первые наблюдаемые покупки"
-              heads={['Owner', 'Покупка', 'Текущий баланс', 'Порядок / ранний вход']}
+              title="First observed buys"
+              heads={['Owner', 'Buy', 'Current balance', 'Order / early entry']}
               rows={r.earlyBuyers.buyers.map((b) => ({
                 id: b.owner,
                 cells: () => [
@@ -392,11 +392,11 @@ export function ReportView({
                       {b.signature}
                     </External>
                     <p>
-                      {units(b.amount, decimals)} · слот {b.slot}
+                      {units(b.amount, decimals)} · slot {b.slot}
                     </p>
                   </>,
                   units(b.currentBalance, decimals),
-                  `${b.transactionOrder ?? 'порядок неизвестен'} / ${b.early === null ? 'неизвестно' : b.early ? 'подтверждён в окне' : 'нет'} · ${b.entryClaim}`,
+                  `${b.transactionOrder ?? 'order unknown'} / ${b.early === null ? 'unknown' : b.early ? 'confirmed within window' : 'no'} · ${b.entryClaim}`,
                 ],
               }))}
             />
@@ -404,24 +404,24 @@ export function ReportView({
         )}
       </section>
       <section>
-        <h3>Изменения позиций</h3>
+        <h3>Position changes</h3>
         {!r.changes ? (
-          <p>Сравнение ещё не выполнялось.</p>
+          <p>No comparison has been performed yet.</p>
         ) : (
           <>
             <p>
-              Снимки {r.changes.comparable ? 'сопоставимы' : 'не сопоставимы'}. Изменение ранга не
-              означает продажу.
+              Snapshots {r.changes.comparable ? 'comparable' : 'not comparable'}. A ranking change
+              does not mean a sale.
             </p>
             {r.changes.previousReportId && (
               <Link to="/report/$id" params={{ id: r.changes.previousReportId }}>
-                Предыдущий отчёт
+                Previous report
               </Link>
             )}
             <Reasons values={r.changes.reasons} />
             <Table
-              title="Разница балансов"
-              heads={['Owner', 'До', 'После', 'Разница', 'Необъяснённая разница']}
+              title="Balance changes"
+              heads={['Owner', 'Before', 'After', 'Difference', 'Unexplained difference']}
               rows={r.changes.positions.map((p) => ({
                 id: p.owner,
                 cells: () => [
@@ -434,12 +434,12 @@ export function ReportView({
               }))}
             />
             <Table
-              title="Наблюдаемые движения"
-              heads={['Owner / контрагент', 'Тип', 'Количество', 'Слот / транзакция', 'Основание']}
+              title="Observed movements"
+              heads={['Owner / counterparty', 'Type', 'Amount', 'Slot / transaction', 'Basis']}
               rows={r.changes.movements.map((m) => ({
                 id: m.id,
                 cells: () => [
-                  `${m.owner} / ${m.counterparty ?? 'неизвестно'}`,
+                  `${m.owner} / ${m.counterparty ?? 'unknown'}`,
                   m.kind,
                   units(m.amount, decimals),
                   m.signature ? (
@@ -447,9 +447,9 @@ export function ReportView({
                       {m.slot ?? '?'} · {m.signature}
                     </External>
                   ) : (
-                    'неизвестно'
+                    'unknown'
                   ),
-                  `${m.explanation}${m.controlHypothesis ? ` · гипотеза ${m.controlHypothesis}; личность не доказана` : ''}`,
+                  `${m.explanation}${m.controlHypothesis ? ` · hypothesis ${m.controlHypothesis}; identity not proven` : ''}`,
                 ],
               }))}
             />
@@ -457,23 +457,23 @@ export function ReportView({
         )}
       </section>
       <section>
-        <h3>Сценарии продажи</h3>
+        <h3>Sell scenarios</h3>
         <p>
-          База сценариев: отмеченный баланс {units(r.scenarios.basisAmount, decimals)}. Модель:{' '}
-          {r.scenarios.modelVersion}. Время: {date(r.scenarios.observedAt)}. Это расчёт в известных
-          рынках, а не прогноз продажи.
+          Scenario basis: flagged balance {units(r.scenarios.basisAmount, decimals)}. Model:{' '}
+          {r.scenarios.modelVersion}. Time: {date(r.scenarios.observedAt)}. This is a calculation
+          for known markets, not a sale prediction.
         </p>
         <Reasons values={r.scenarios.limitations} />
         {r.scenarios.scenarios.map((s) => (
           <details key={s.fractionBps} open>
             <summary>
-              {percent(s.fractionBps)} отмеченного баланса · {units(s.baseIn, decimals)}
+              {percent(s.fractionBps)} of flagged balance · {units(s.baseIn, decimals)}
             </summary>
-            {!s.quotes.length && <p>Поддерживаемые рынки недоступны.</p>}
+            {!s.quotes.length && <p>Supported markets are unavailable.</p>}
             {s.quotes.map((q) => (
               <div key={q.market}>
                 <p>
-                  {q.venue} · {q.market} · слот {q.slot} · {stateLabel[q.status]}. Quote mint:{' '}
+                  {q.venue} · {q.market} · slot {q.slot} · {stateLabel[q.status]}. Quote mint:{' '}
                   {q.quoteMint}.
                 </p>
                 {q.status === 'unavailable' ? (
@@ -481,14 +481,14 @@ export function ReportView({
                 ) : (
                   <>
                     <p>
-                      Выход: {q.quoteUnits ?? `${q.netQuoteOut} raw (decimals неизвестны)`};
-                      минимальный raw: {q.minQuoteOut}. Изменение спот-цены, bps:{' '}
-                      {q.postSpotDropBps}; влияние на исполнение, bps: {q.executionImpactBps}.
+                      Output: {q.quoteUnits ?? `${q.netQuoteOut} raw (decimals unknown)`}; minimum
+                      raw: {q.minQuoteOut}. Spot price change, bps: {q.postSpotDropBps}; execution
+                      impact, bps: {q.executionImpactBps}.
                     </p>
                     <p>
-                      Комиссии raw: LP {q.fees.lp}, протокол {q.fees.protocol}, создатель{' '}
-                      {q.fees.creator}. Резервы raw: эффективный {q.effectiveQuoteReserve};
-                      доступный {q.realQuoteAvailable}.
+                      Fees raw: LP {q.fees.lp}, protocol {q.fees.protocol}, creator {q.fees.creator}
+                      . Reserves raw: effective {q.effectiveQuoteReserve}; available{' '}
+                      {q.realQuoteAvailable}.
                     </p>
                     <Reasons values={q.assumptions} />
                   </>
@@ -497,22 +497,25 @@ export function ReportView({
             ))}
             {s.routes.map((route) => (
               <p key={`${route.kind}:${route.quoteMint}`}>
-                {route.kind} · quote {route.quoteMint} · выход {route.netQuoteOut} raw ·{' '}
-                {route.legs.length} рынков; достижимо в модели, глобальный оптимум не доказан.
+                {route.kind} · quote {route.quoteMint} · output {route.netQuoteOut} raw ·{' '}
+                {route.legs.length} markets; attainable in the model, global optimum not proven.
               </p>
             ))}
           </details>
         ))}
       </section>
       <section>
-        <h3>График цены</h3>
-        <p>Внешние свечи USD показываются отдельно от снимка отчёта и расчётов резервов.</p>
+        <h3>Price chart</h3>
+        <p>
+          External USD candles are displayed separately from the report snapshot and reserve
+          calculations.
+        </p>
         {chart ? (
-          <Suspense fallback={<p role="status">Загружаем график…</p>}>
+          <Suspense fallback={<p role="status">Loading chart…</p>}>
             <PriceChart mint={r.identity.mint} />
           </Suspense>
         ) : (
-          <button onClick={() => setChart(true)}>Загрузить свечи</button>
+          <button onClick={() => setChart(true)}>Load candles</button>
         )}
       </section>
       {edge && <EvidenceDialog edge={edge} close={() => setEdge(undefined)} />}
@@ -539,28 +542,28 @@ function EvidenceDialog({ edge: e, close }: { edge: RelationshipEdge; close: () 
         close();
       }}
     >
-      <h2 id="evidence-title">Доказательство {e.id}</h2>
+      <h2 id="evidence-title">Evidence {e.id}</h2>
       <button autoFocus onClick={close}>
-        Закрыть доказательство
+        Close evidence
       </button>
       <p>{e.explanation}</p>
       <p>
         {e.from} → {e.to}
       </p>
       <p>
-        Тип: {e.kind}; сила: {e.strength}; уверенность: {e.confidence}. Личность владельца не
-        доказана.
+        Type: {e.kind}; strength: {e.strength}; confidence: {e.confidence}. Owner identity is not
+        proven.
       </p>
       <p>
-        Количество raw: {e.amount ?? 'неизвестно'}. Версия правила: {e.ruleVersion}.
+        Amount raw: {e.amount ?? 'unknown'}. Rule version: {e.ruleVersion}.
       </p>
       <p>
-        Поддерживает гипотезу общего контроля: {e.supportsControlHypothesis ? 'да' : 'нет'}; сервис
-        исключён: {e.serviceExcluded ? 'да' : 'нет'}.
+        Supports a common-control hypothesis: {e.supportsControlHypothesis ? 'yes' : 'no'}; service
+        excluded: {e.serviceExcluded ? 'yes' : 'no'}.
       </p>
       <p>
-        Источник: {e.provenance.provider}; время: {date(e.provenance.observedAt)}; слот:{' '}
-        {e.provenance.slot ?? 'неизвестно'}; commitment: {e.provenance.commitment}; парсер:{' '}
+        Source: {e.provenance.provider}; time: {date(e.provenance.observedAt)}; slot:{' '}
+        {e.provenance.slot ?? 'unknown'}; commitment: {e.provenance.commitment}; parser:{' '}
         {e.provenance.parserVersion}.
       </p>
       <ul>
@@ -571,8 +574,8 @@ function EvidenceDialog({ edge: e, close }: { edge: RelationshipEdge; close: () 
         ))}
       </ul>
       <p>
-        Подписи: {e.signatures.join(', ') || e.signature || 'неизвестно'}. Связанные доказательства:{' '}
-        {e.relatedEvidenceIds.join(', ') || 'нет'}.
+        Signatures: {e.signatures.join(', ') || e.signature || 'unknown'}. Related evidence:{' '}
+        {e.relatedEvidenceIds.join(', ') || 'no'}.
       </p>
     </dialog>
   );

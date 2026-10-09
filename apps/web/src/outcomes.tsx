@@ -13,10 +13,10 @@ export function Outcomes({ id }: { id: string }) {
   });
   return (
     <section>
-      <h2>Будущие наблюдения</h2>
+      <h2>Follow-up observations</h2>
       <p>
-        Измерения после отчёта проверяют правила. Падение цены и уменьшение USD-глубины не
-        доказывают мошенничество. Точность эвристики ещё не подтверждена.
+        Measurements after a report help evaluate rules. Price drops and reduced USD depth do not
+        prove fraud. The heuristic has not yet demonstrated accuracy.
       </p>
       <button
         onClick={() => {
@@ -25,20 +25,20 @@ export function Outcomes({ id }: { id: string }) {
         }}
         disabled={data.isFetching}
       >
-        Загрузить наблюдения
+        Load observations
       </button>
-      {enabled && data.isPending && <p>Загрузка…</p>}
+      {enabled && data.isPending && <p>Loading…</p>}
       {data.error && <p role="alert">{errorMessage(data.error)}</p>}
       {data.data?.length === 0 && (
-        <p>Наблюдения ещё не запланированы или отчёт не является глубоким.</p>
+        <p>Observations are not scheduled yet or this is not a deep report.</p>
       )}
       <ul>
         {data.data?.map((row) => (
           <li key={row.horizonSeconds}>
-            {row.horizonSeconds / 3600} ч —{' '}
+            {row.horizonSeconds / 3600} h -{' '}
             {row.result
-              ? `${row.result.status === 'observed' ? 'наблюдалось' : 'данных недостаточно'}; изменение цены ${row.result.priceReturnBps ?? 'неизвестно'} bps; USD-глубины ${row.result.liquidityChangeBps ?? 'неизвестно'} bps; предложения ${row.result.supplyDelta ?? 'неизвестно'} raw. Время: ${row.result.current.observedAt}. Причины: ${row.result.reasons.join(', ')}`
-              : `ожидается после ${new Date(row.dueAt).toLocaleString()}`}
+              ? `${row.result.status === 'observed' ? 'observed' : 'insufficient data'}; price change ${row.result.priceReturnBps ?? 'unknown'} bps; USD depth ${row.result.liquidityChangeBps ?? 'unknown'} bps; supply ${row.result.supplyDelta ?? 'unknown'} raw. Time: ${row.result.current.observedAt}. Reasons: ${row.result.reasons.join(', ')}`
+              : `pending after ${new Date(row.dueAt).toLocaleString('en-US')}`}
           </li>
         ))}
       </ul>

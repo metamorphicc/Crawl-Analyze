@@ -4,7 +4,7 @@ it('keeps u64 and signed differences exact at any token precision', () => {
   expect(units('18446744073709551615', 9)).toBe('18446744073.709551615');
   expect(units('-9007199254740993', 6)).toBe('-9007199254.740993');
   expect(units('1', 18)).toBe('0.000000000000000001');
-  expect(units(null, 6)).toBe('неизвестно');
+  expect(units(null, 6)).toBe('unknown');
 });
 it('never makes report-provided hostile URLs clickable', () => {
   for (const url of [

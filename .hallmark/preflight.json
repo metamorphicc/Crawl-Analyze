@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-09",
+  "scope": "Minimal styling of the existing application, explicitly authorized by user",
+  "framework": "React/Vite",
+  "fonts": ["Space Grotesk", "IBM Plex Mono"],
+  "paletteBefore": "Browser defaults; no existing colour tokens",
+  "motion": "No page animation; only button press with reduced-motion override",
+  "preserved": [
+    "routes",
+    "data semantics",
+    "native controls",
+    "table containment",
+    "evidence dialog"
+  ],
+  "pending": "User-supplied final design.md and spider visual"
+}
